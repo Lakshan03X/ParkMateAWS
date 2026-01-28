@@ -1,0 +1,109 @@
+╔══════════════════════════════════════════════════════════════════╗
+║                  🚀 OCR QUICK REFERENCE CARD                     ║
+║              Google Gemini License Plate Scanner                 ║
+╚══════════════════════════════════════════════════════════════════╝
+
+┌──────────────────────────────────────────────────────────────────┐
+│ ✅ YOUR SETUP STATUS: READY TO USE!                              │
+└──────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────┐
+│ 🎯 TO START USING (REQUIRED)                                     │
+├──────────────────────────────────────────────────────────────────┤
+│ 1. Restart Expo:                                                 │
+│    npx expo start --clear                                        │
+│                                                                  │
+│ 2. Open app → Parking Owner/Inspector Dashboard → "Scan Plate"  │
+└──────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────┐
+│ 📖 DOCUMENTATION (READ THESE)                                    │
+├──────────────────────────────────────────────────────────────────┤
+│ • SETUP_OCR_IN_3_STEPS.md       → Quick 3-minute setup          │
+│ • COMPLETE_OCR_SETUP_GUIDE.md   → Full documentation            │
+│ • QUICK_OCR_TROUBLESHOOTING.md  → Fix common errors             │
+│ • OCR_SETUP_SUMMARY.md          → Overview & status             │
+└──────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────┐
+│ 🔑 API KEY LOCATION                                              │
+├──────────────────────────────────────────────────────────────────┤
+│ File: .env                                                       │
+│ Key:  EXPO_PUBLIC_GEMINI_API_KEY=AIzaSy...                      │
+│ Get:  https://aistudio.google.com/app/apikey                    │
+└──────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────┐
+│ 📊 FREE TIER LIMITS                                              │
+├──────────────────────────────────────────────────────────────────┤
+│ • 15 scans per minute                                            │
+│ • 1,500 scans per day                                            │
+│ • 45,000 scans per month                                         │
+│ • No credit card required!                                       │
+└──────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────┐
+│ 🐛 COMMON ERRORS - INSTANT FIXES                                 │
+├──────────────────────────────────────────────────────────────────┤
+│ ❌ "Gemini not initialized"                                      │
+│ ✅ Fix: npx expo start --clear                                   │
+│                                                                  │
+│ ❌ "No license plate detected"                                   │
+│ ✅ Fix: Better lighting, center plate, steady hand              │
+│                                                                  │
+│ ❌ "Image too large"                                             │
+│ ✅ Fix: Move closer, reduce background                          │
+│                                                                  │
+│ ❌ "Rate limit exceeded"                                         │
+│ ✅ Fix: Wait 1 minute                                            │
+└──────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────┐
+│ 🔍 VERIFICATION                                                  │
+├──────────────────────────────────────────────────────────────────┤
+│ Run: .\verify-ocr-setup.ps1                                     │
+│ Check: cat .env | Select-String "GEMINI"                        │
+│ Logs: Look for "✓ Gemini OCR Success"                          │
+└──────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────┐
+│ 💡 BEST PRACTICES FOR SCANNING                                   │
+├──────────────────────────────────────────────────────────────────┤
+│ ✓ Use good lighting (daylight or bright indoor)                 │
+│ ✓ Center the plate in the frame guide                           │
+│ ✓ Hold phone steady (avoid blur)                                │
+│ ✓ Take photo straight-on (not at angle)                         │
+│ ✓ Distance: 1-3 feet from plate                                 │
+└──────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────┐
+│ 🎓 SUPPORTED FORMATS                                             │
+├──────────────────────────────────────────────────────────────────┤
+│ • WP ABC-1234   (District + Letters + Numbers)                  │
+│ • ABC-1234      (Letters + Numbers)                             │
+│ • WP-1234       (District + Numbers)                            │
+│ • CAA-5678      (Letters + Numbers)                             │
+└──────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────┐
+│ ⚙️  TECHNICAL INFO                                               │
+├──────────────────────────────────────────────────────────────────┤
+│ Provider:  Google Gemini AI                                      │
+│ Model:     gemini-1.5-flash                                      │
+│ Package:   @google/generative-ai v0.24.1                        │
+│ Service:   app/services/ocrService.ts                           │
+│ Screens:   scanPlate.tsx, inspectorScanPlate.tsx               │
+└──────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────┐
+│ 🆘 GET HELP                                                      │
+├──────────────────────────────────────────────────────────────────┤
+│ 1. Run:  .\verify-ocr-setup.ps1                                │
+│ 2. Read: QUICK_OCR_TROUBLESHOOTING.md                           │
+│ 3. See:  COMPLETE_OCR_SETUP_GUIDE.md                            │
+│ 4. Check Expo console for error messages                        │
+└──────────────────────────────────────────────────────────────────┘
+
+╔══════════════════════════════════════════════════════════════════╗
+║  ✨ YOUR APP IS READY! JUST RESTART EXPO AND START SCANNING! ✨  ║
+╚══════════════════════════════════════════════════════════════════╝

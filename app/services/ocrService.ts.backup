@@ -1,0 +1,255 @@
+import * as FileSystem from "expo-file-system";
+import * as ImageManipulator from "expo-image-manipulator";
+
+interface OCRResponse {
+  success: boolean;
+  text: string;
+  confidence?: number;
+  error?: string;
+}
+
+class OCRService {
+  // OCR.space API - FREE 25,000 requests/month, no registration needed
+  private readonly OCR_SPACE_API_KEY = "K87899142388957"; // Free public key
+  private readonly OCR_SPACE_URL = "https://api.ocr.space/parse/image";
+
+  constructor() {
+    console.log("✓ OCR.space initialized (FREE - 25k/month)");
+  }
+
+  /**
+   * Extract text from image using OCR.space (FREE)
+   */
+  async extractTextFromImage(imageUri: string): Promise<OCRResponse> {
+    try {
+      console.log("🔍 Starting OCR.space OCR (FREE service)...");
+
+      // Compress image to stay under 1MB limit for Gemini
+      console.log("Compressing image to meet Gemini size limit...");
+      const compressedImage = await ImageManipulator.manipulateAsync(
+        imageUri,
+        [
+          { resize: { width: 1024 } }, // Reduce size to fit under 1MB
+        ],
+        {
+          compress: 0.7, // Compress to reduce file size
+          format: ImageManipulator.SaveFormat.JPEG,
+        }
+      );
+
+      // Read the compressed image as base64
+      const file = new FileSystem.File(compressedImage.uri);
+      const base64Image = await file.base64();
+
+      const fileSizeKB = Math.round(base64Image.length / 1024);
+      console.log(`Compressed image size: ${fileSizeKB} KB`);
+
+      // If still too large, compress more aggressively
+      let finalImageUri = compressedImage.uri;
+      let finalBase64 = base64Image;
+
+      if (fileSizeKB > 900) {
+        console.log("Image still large, applying aggressive compression...");
+        const smallerImage = await ImageManipulator.manipulateAsync(
+          imageUri,
+          [
+            { resize: { width: 800 } }, // More aggressive resize
+          ],
+          {
+            compress: 0.5, // More aggressive compression
+            format: ImageManipulator.SaveFormat.JPEG,
+          }
+        );
+
+        const smallerFile = new FileSystem.File(smallerImage.uri);
+        finalBase64 = await smallerFile.base64();
+        const finalSizeKB = Math.round(finalBase64.length / 1024);
+        console.log(`Final compressed size: ${finalSizeKB} KB`);
+
+        if (finalSizeKB > 1024) {
+          throw new Error(
+            `Image still too large after compression: ${finalSizeKB} KB. Try capturing from closer distance.`
+          );
+        }
+      }
+
+      // Initialize Gemini model
+      // Using models/gemini-1.5-flash (full path for v1 API)
+      const model = this.genAI.getGenerativeModel({
+        model: "models/gemini-1.5-flash",
+      });
+
+      // Enhanced prompt for maximum accuracy - focus on license plate only
+      const prompt = `You are a specialized license plate recognition system. Analyze this image and extract ONLY the vehicle license plate number.
+
+CRITICAL INSTRUCTIONS:
+1. LOOK ONLY for a rectangular license plate with alphanumeric characters
+2. IGNORE all other text, signs, stickers, or background elements
+3. Common Sri Lankan plate formats: "WP ABC-1234", "ABC-1234", "WP-1234", "CAA-1234"
+4. Return ONLY the plate number - absolutely NO explanations, NO formatting, NO markdown
+5. Preserve spacing and hyphens exactly as they appear on the plate
+6. Use UPPERCASE letters only
+7. If you see multiple text elements, identify which one is the LICENSE PLATE and return only that
+8. The license plate is typically yellow/white rectangular with black text
+9. If NO license plate is visible or readable, respond with exactly: "NO_PLATE_DETECTED"
+
+CORRECT OUTPUT EXAMPLES:
+"WP ABC-1234"
+"CAA-5678"
+"ABC-9012"
+"WP-1234"
+
+INCORRECT (Don't do this):
+"The license plate number is WP ABC-1234"
+"WP ABC-1234 (license plate)"
+"I see WP ABC-1234"
+
+Now analyze the image and extract ONLY the license plate number:`;
+
+      // Convert base64 to the format Gemini expects (always JPEG after compression)
+      const imagePart = {
+        inlineData: {
+          data: finalBase64,
+          mimeType: "image/jpeg",
+        },
+      };
+
+      // Generate content
+      const result = await model.generateContent([prompt, imagePart]);
+      const response = await result.response;
+      const text = response.text();
+
+      console.log("Gemini raw response:", text);
+
+      // Check if no plate was detected
+      if (
+        text.includes("NO_PLATE_DETECTED") ||
+        !text ||
+        text.trim().length === 0
+      ) {
+        return {
+          success: false,
+          text: "",
+          error: "No license plate detected in the image",
+        };
+      }
+
+      // Clean up the response - remove markdown, extra spaces, and formatting
+      let cleanedText = text
+        .trim()
+        .replace(/[*`\n\r]/g, "") // Remove markdown and newlines
+        .replace(/\s+/g, " ") // Normalize spaces
+        .toUpperCase(); // Ensure uppercase
+
+      // Remove common OCR artifacts
+      cleanedText = cleanedText.replace(/[|\\\/_]/g, "-"); // Fix separators
+
+      console.log("✓ Gemini OCR Success:", cleanedText);
+
+      return {
+        success: true,
+        text: cleanedText,
+        confidence: 0.95, // Gemini with enhanced prompt is highly accurate
+      };
+    } catch (error: any) {
+      console.error("Gemini OCR Error:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Extract text from image using Google Gemini OCR ONLY
+   */
+  async extractTextFromImage(imageUri: string): Promise<OCRResponse> {
+    try {
+      console.log("Starting Google Gemini OCR (ONLY provider)...");
+
+      // Check if Gemini is initialized
+      if (!this.genAI) {
+        return {
+          success: false,
+          text: "",
+          error:
+            "Gemini API key not configured. Please add EXPO_PUBLIC_GEMINI_API_KEY to your .env file.",
+        };
+      }
+
+      // Use Gemini OCR
+      return await this.extractTextWithGemini(imageUri);
+    } catch (error: any) {
+      console.error("Gemini OCR Error:", error);
+
+      return {
+        success: false,
+        text: "",
+        error:
+          error.message ||
+          "Failed to extract text with Gemini. Please try again.",
+      };
+    }
+  }
+
+  /**
+   * Extract and format number plate from detected text
+   */
+  extractNumberPlate(text: string): string {
+    // Clean the text
+    const cleaned = text.trim().toUpperCase().replace(/\s+/g, " ");
+
+    // Sri Lankan number plate patterns
+    const patterns = [
+      /([A-Z]{2})\s*[-]?\s*([A-Z]{2,4})\s*[-]?\s*(\d{4})/i, // WP ABC 1234
+      /([A-Z]{3})\s*[-]?\s*(\d{4})/i, // ABC 1234
+      /([A-Z]{2,3})\s*[-]?\s*([A-Z]{1,3})\s*[-]?\s*(\d{3,4})/i, // Flexible pattern
+    ];
+
+    // Try to match patterns in each line
+    const lines = cleaned.split("\n");
+    for (let line of lines) {
+      for (let pattern of patterns) {
+        const match = line.match(pattern);
+        if (match) {
+          return match[0].replace(/\s+/g, " ").trim();
+        }
+      }
+    }
+
+    // If no pattern matched, try to extract alphanumeric sequences
+    const alphanumeric = cleaned.replace(/[^A-Z0-9\s-]/g, "");
+    const words = alphanumeric.split(/\s+/);
+
+    // Look for sequences that might be plates (letters followed by numbers)
+    for (let i = 0; i < words.length; i++) {
+      const word = words[i];
+      // Check if it looks like a plate (has both letters and numbers)
+      if (/[A-Z]/.test(word) && /\d/.test(word)) {
+        return word;
+      }
+    }
+
+    // Return the first meaningful line
+    return lines[0] || cleaned;
+  }
+
+  /**
+   * Process image and extract number plate
+   */
+  async scanNumberPlate(imageUri: string): Promise<OCRResponse> {
+    const result = await this.extractTextFromImage(imageUri);
+
+    if (!result.success || !result.text) {
+      return result;
+    }
+
+    // Extract number plate from the detected text
+    const numberPlate = this.extractNumberPlate(result.text);
+
+    return {
+      success: true,
+      text: numberPlate,
+      confidence: result.confidence,
+    };
+  }
+}
+
+export default new OCRService();

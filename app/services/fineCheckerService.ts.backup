@@ -1,0 +1,330 @@
+import {
+  collection,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
+  getDocs,
+  query,
+  where,
+  orderBy,
+  Timestamp,
+  getDoc,
+} from "firebase/firestore";
+import { db } from "./firebase";
+
+export interface FineChecker {
+  id: string;
+  fullName: string;
+  email: string;
+  password?: string;
+  municipalCouncil: string;
+  status: "onDuty" | "offDuty";
+  checkerId?: string;
+  mobileNumber?: string;
+  registeredDate?: string;
+  profilePictureUrl?: string;
+  createdAt?: any;
+  updatedAt?: any;
+}
+
+const COLLECTION_NAME = "fineCheckers";
+
+class FineCheckerService {
+  /**
+   * Get all fine checkers
+   */
+  async getAllFineCheckers(): Promise<FineChecker[]> {
+    try {
+      const checkersRef = collection(db, COLLECTION_NAME);
+      const q = query(checkersRef, orderBy("createdAt", "desc"));
+      const querySnapshot = await getDocs(q);
+
+      const checkers: FineChecker[] = [];
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        checkers.push({
+          id: doc.id,
+          fullName: data.fullName,
+          email: data.email,
+          municipalCouncil: data.municipalCouncil,
+          status: data.status || "offDuty",
+          checkerId: data.checkerId,
+          mobileNumber: data.mobileNumber,
+          registeredDate: data.registeredDate,
+          createdAt: data.createdAt,
+          updatedAt: data.updatedAt,
+        });
+      });
+
+      return checkers;
+    } catch (error) {
+      console.error("Error getting fine checkers:", error);
+      throw new Error("Failed to fetch fine checkers");
+    }
+  }
+
+  /**
+   * Get fine checker by ID
+   */
+  async getFineCheckerById(checkerId: string): Promise<FineChecker | null> {
+    try {
+      const checkerRef = doc(db, COLLECTION_NAME, checkerId);
+      const checkerSnap = await getDoc(checkerRef);
+
+      if (checkerSnap.exists()) {
+        const data = checkerSnap.data();
+        return {
+          id: checkerSnap.id,
+          fullName: data.fullName,
+          email: data.email,
+          municipalCouncil: data.municipalCouncil,
+          status: data.status || "offDuty",
+          checkerId: data.checkerId,
+          mobileNumber: data.mobileNumber,
+          registeredDate: data.registeredDate,
+          profilePictureUrl: data.profilePictureUrl,
+          createdAt: data.createdAt,
+          updatedAt: data.updatedAt,
+        };
+      }
+
+      return null;
+    } catch (error) {
+      console.error("Error getting fine checker by ID:", error);
+      return null;
+    }
+  }
+
+  /**
+   * Add a new fine checker
+   */
+  async addFineChecker(
+    checkerData: Omit<FineChecker, "id">
+  ): Promise<FineChecker> {
+    try {
+      const newChecker = {
+        ...checkerData,
+        status: checkerData.status || "offDuty",
+        registeredDate: new Date().toISOString().split("T")[0],
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+      };
+
+      const docRef = await addDoc(collection(db, COLLECTION_NAME), newChecker);
+
+      return {
+        id: docRef.id,
+        ...checkerData,
+      };
+    } catch (error) {
+      console.error("Error adding fine checker:", error);
+      throw new Error("Failed to add fine checker");
+    }
+  }
+
+  /**
+   * Update an existing fine checker
+   */
+  async updateFineChecker(
+    checkerId: string,
+    updates: Partial<FineChecker>
+  ): Promise<void> {
+    try {
+      const checkerRef = doc(db, COLLECTION_NAME, checkerId);
+      await updateDoc(checkerRef, {
+        ...updates,
+        updatedAt: Timestamp.now(),
+      });
+    } catch (error) {
+      console.error("Error updating fine checker:", error);
+      throw new Error("Failed to update fine checker");
+    }
+  }
+
+  /**
+   * Delete a fine checker
+   */
+  async deleteFineChecker(checkerId: string): Promise<void> {
+    try {
+      const checkerRef = doc(db, COLLECTION_NAME, checkerId);
+      await deleteDoc(checkerRef);
+    } catch (error) {
+      console.error("Error deleting fine checker:", error);
+      throw new Error("Failed to delete fine checker");
+    }
+  }
+
+  /**
+   * Update fine checker status (onDuty/offDuty)
+   */
+  async updateFineCheckerStatus(
+    checkerId: string,
+    status: "onDuty" | "offDuty"
+  ): Promise<{ status: string; message: string }> {
+    try {
+      const checkerRef = doc(db, COLLECTION_NAME, checkerId);
+      await updateDoc(checkerRef, {
+        status: status,
+        updatedAt: Timestamp.now(),
+      });
+
+      console.log(`✅ Fine checker status updated to ${status}`);
+      return {
+        status: "success",
+        message: `Status updated to ${status}`,
+      };
+    } catch (error) {
+      console.error("Error updating fine checker status:", error);
+      return {
+        status: "error",
+        message: "Failed to update status",
+      };
+    }
+  }
+
+  /**
+   * Get fine checkers by municipal council
+   */
+  async getFineCheckersByCouncil(
+    municipalCouncil: string
+  ): Promise<FineChecker[]> {
+    try {
+      const checkersRef = collection(db, COLLECTION_NAME);
+      const q = query(
+        checkersRef,
+        where("municipalCouncil", "==", municipalCouncil),
+        orderBy("createdAt", "desc")
+      );
+      const querySnapshot = await getDocs(q);
+
+      const checkers: FineChecker[] = [];
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        checkers.push({
+          id: doc.id,
+          fullName: data.fullName,
+          email: data.email,
+          municipalCouncil: data.municipalCouncil,
+          status: data.status || "offDuty",
+          checkerId: data.checkerId,
+          mobileNumber: data.mobileNumber,
+          registeredDate: data.registeredDate,
+          createdAt: data.createdAt,
+          updatedAt: data.updatedAt,
+        });
+      });
+
+      return checkers;
+    } catch (error) {
+      console.error("Error getting fine checkers by council:", error);
+      throw new Error("Failed to fetch fine checkers by council");
+    }
+  }
+
+  /**
+   * Get fine checkers by status
+   */
+  async getFineCheckersByStatus(
+    status: "onDuty" | "offDuty"
+  ): Promise<FineChecker[]> {
+    try {
+      const checkersRef = collection(db, COLLECTION_NAME);
+      const q = query(
+        checkersRef,
+        where("status", "==", status),
+        orderBy("createdAt", "desc")
+      );
+      const querySnapshot = await getDocs(q);
+
+      const checkers: FineChecker[] = [];
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        checkers.push({
+          id: doc.id,
+          fullName: data.fullName,
+          email: data.email,
+          municipalCouncil: data.municipalCouncil,
+          status: data.status,
+          checkerId: data.checkerId,
+          mobileNumber: data.mobileNumber,
+          registeredDate: data.registeredDate,
+          createdAt: data.createdAt,
+          updatedAt: data.updatedAt,
+        });
+      });
+
+      return checkers;
+    } catch (error) {
+      console.error("Error getting fine checkers by status:", error);
+      throw new Error("Failed to fetch fine checkers by status");
+    }
+  }
+
+  /**
+   * Verify fine checker login credentials
+   */
+  async verifyFineCheckerLogin(
+    email: string,
+    password: string
+  ): Promise<{ status: string; message: string; checker?: FineChecker }> {
+    try {
+      console.log("🔍 Verifying fine checker login:", { email });
+
+      const checkersRef = collection(db, COLLECTION_NAME);
+      const q = query(checkersRef, where("email", "==", email));
+      const querySnapshot = await getDocs(q);
+
+      if (querySnapshot.empty) {
+        console.log("❌ Email not found");
+        return {
+          status: "error",
+          message: "Email not found. Please check your credentials.",
+        };
+      }
+
+      let matchedChecker: FineChecker | null = null;
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        if (data.password === password) {
+          const checker: FineChecker = {
+            id: doc.id,
+            fullName: data.fullName,
+            email: data.email,
+            municipalCouncil: data.municipalCouncil,
+            status: data.status || "offDuty",
+            checkerId: data.checkerId,
+            mobileNumber: data.mobileNumber,
+            registeredDate: data.registeredDate,
+            createdAt: data.createdAt,
+            updatedAt: data.updatedAt,
+          };
+          matchedChecker = checker;
+        }
+      });
+
+      if (!matchedChecker) {
+        console.log("❌ Password does not match");
+        return {
+          status: "error",
+          message: "Password does not match. Please check your credentials.",
+        };
+      }
+
+      console.log("✅ Fine checker verified:");
+      return {
+        status: "success",
+        message: "Fine checker verified successfully",
+        checker: matchedChecker,
+      };
+    } catch (error) {
+      console.error("Error verifying fine checker login:", error);
+      return {
+        status: "error",
+        message: "Failed to verify credentials. Please try again.",
+      };
+    }
+  }
+}
+
+export default new FineCheckerService();
