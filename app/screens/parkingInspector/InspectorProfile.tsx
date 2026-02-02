@@ -43,13 +43,15 @@ const InspectorProfile = () => {
   const [name, setName] = useState(params.inspectorName as string);
   const [email, setEmail] = useState((params.email as string) || "");
   const [municipalCouncil, setMunicipalCouncil] = useState(
-    (params.municipalCouncil as string) || "Colombo"
+    (params.municipalCouncil as string) || "Colombo",
   );
   const [inspectorId, setInspectorId] = useState(params.employeeId as string);
   const [mobileNumber, setMobileNumber] = useState(
-    params.mobileNumber as string
+    params.mobileNumber as string,
   );
-  const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(null);
+  const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(
+    null,
+  );
 
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -65,7 +67,7 @@ const InspectorProfile = () => {
     try {
       setIsLoading(true);
       const inspector = await inspectorService.getInspectorById(
-        params.inspectorId as string
+        params.inspectorId as string,
       );
 
       if (inspector) {
@@ -87,12 +89,13 @@ const InspectorProfile = () => {
   const pickImage = async () => {
     try {
       // Request permission
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      
+      const { status } =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+
       if (status !== "granted") {
         Alert.alert(
           "Permission Required",
-          "Please grant permission to access your photo library"
+          "Please grant permission to access your photo library",
         );
         return;
       }
@@ -108,16 +111,16 @@ const InspectorProfile = () => {
       if (!result.canceled && result.assets[0]) {
         setIsUploadingImage(true);
         const imageUri = result.assets[0].uri;
-        
+
         // In a production app, you would upload this to AWS S3
         // For now, we'll just use the local URI
         setProfilePictureUrl(imageUri);
-        
+
         // Update immediately in AWS DynamoDB
         await inspectorService.updateInspector(params.inspectorId as string, {
           profilePictureUrl: imageUri,
         });
-        
+
         setIsUploadingImage(false);
         Alert.alert("Success", "Profile picture updated successfully");
       }

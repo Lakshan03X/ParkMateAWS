@@ -108,7 +108,7 @@ const InspectorOtpVerify = () => {
     try {
       const result = await awsDemoService.verifyOTP(
         params.transactionId as string,
-        enteredOtp
+        enteredOtp,
       );
 
       if (result.status === "success" && result.verified) {
@@ -135,7 +135,7 @@ const InspectorOtpVerify = () => {
                 });
               },
             },
-          ]
+          ],
         );
       } else {
         setIsError(true);
@@ -160,7 +160,7 @@ const InspectorOtpVerify = () => {
     try {
       const result = await awsDemoService.requestOTP(
         params.employeeId as string,
-        params.mobileNumber as string
+        params.mobileNumber as string,
       );
 
       if (result.status === "success") {
@@ -269,7 +269,7 @@ const InspectorOtpVerify = () => {
               style={[
                 styles.confirmButton,
                 (isVerifying || otp.some((d) => !d)) &&
-                styles.confirmButtonDisabled,
+                  styles.confirmButtonDisabled,
               ]}
               onPress={handleConfirm}
               activeOpacity={0.8}

@@ -45,16 +45,16 @@ const CheckerProfile = () => {
   const [name, setName] = useState((params.checkerName as string) || "");
   const [email, setEmail] = useState((params.email as string) || "");
   const [municipalCouncil, setMunicipalCouncil] = useState(
-    (params.municipalCouncil as string) || "Colombo"
+    (params.municipalCouncil as string) || "Colombo",
   );
   const [checkerId, setCheckerId] = useState(
-    (params.employeeId as string) || ""
+    (params.employeeId as string) || "",
   );
   const [mobileNumber, setMobileNumber] = useState(
-    (params.mobileNumber as string) || ""
+    (params.mobileNumber as string) || "",
   );
   const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(
-    null
+    null,
   );
 
   const [isEditing, setIsEditing] = useState(false);
@@ -71,7 +71,7 @@ const CheckerProfile = () => {
     try {
       setIsLoading(true);
       const checker = await fineCheckerService.getFineCheckerById(
-        params.checkerId as string
+        params.checkerId as string,
       );
 
       if (checker) {
@@ -99,7 +99,7 @@ const CheckerProfile = () => {
       if (status !== "granted") {
         Alert.alert(
           "Permission Required",
-          "Please grant permission to access your photo library"
+          "Please grant permission to access your photo library",
         );
         return;
       }

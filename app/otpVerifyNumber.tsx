@@ -117,7 +117,7 @@ const OtpVerifyNumber = () => {
       // Verify OTP with the transaction ID
       const result = await awsDemoService.verifyOTP(
         params.transactionId as string,
-        enteredOtp
+        enteredOtp,
       );
 
       if (result.status === "success" && result.verified) {
@@ -161,7 +161,7 @@ const OtpVerifyNumber = () => {
     try {
       const result = await awsDemoService.requestOTP(
         "", // No NIC for mobile registration
-        params.mobileNumber as string
+        params.mobileNumber as string,
       );
 
       if (result.status === "success") {

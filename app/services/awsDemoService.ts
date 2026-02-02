@@ -81,7 +81,7 @@ class AWSDemoService {
       // Try DynamoDB first
       try {
         const result = (await awsDynamoService.scan(
-          this.demoUsersTable
+          this.demoUsersTable,
         )) as any;
 
         if (result.items && result.items.length > 0) {
@@ -100,7 +100,7 @@ class AWSDemoService {
         }
       } catch (e) {
         console.warn(
-          "⚠️ Failed to scan DynamoDB, falling back to local data only"
+          "⚠️ Failed to scan DynamoDB, falling back to local data only",
         );
       }
 
@@ -114,7 +114,7 @@ class AWSDemoService {
 
   // Add new demo user
   async addDemoUser(
-    user: DemoUserData
+    user: DemoUserData,
   ): Promise<{ status: string; message: string; data?: any }> {
     try {
       console.log("➕ Adding new demo user:", user.fullName);
@@ -167,7 +167,7 @@ class AWSDemoService {
           };
         } else {
           console.log(
-            "⚠️ NIC not found in DynamoDB, checking local fallback..."
+            "⚠️ NIC not found in DynamoDB, checking local fallback...",
           );
         }
       } catch (dynamoError) {
@@ -176,7 +176,7 @@ class AWSDemoService {
 
       // Fall back to local data if DynamoDB is offline or NIC not found
       const localUser = this.localDemoUsers.find(
-        (user) => user.nicNumber === nicNumber
+        (user) => user.nicNumber === nicNumber,
       );
 
       if (localUser) {
@@ -213,7 +213,7 @@ class AWSDemoService {
   // Generate and send OTP (demo version)
   async requestOTP(
     nicNumber: string,
-    mobileNumber: string
+    mobileNumber: string,
   ): Promise<{ status: string; message: string; transactionId?: string }> {
     try {
       console.log("📱 Sending OTP to:", mobileNumber);
@@ -260,7 +260,7 @@ class AWSDemoService {
   // Verify OTP
   async verifyOTP(
     transactionId: string,
-    otp: string
+    otp: string,
   ): Promise<{
     status: string;
     message: string;
@@ -329,7 +329,7 @@ class AWSDemoService {
 
   // Resend OTP
   async resendOTP(
-    transactionId: string
+    transactionId: string,
   ): Promise<{ status: string; message: string; transactionId?: string }> {
     try {
       const otpData = this.otpStore.get(transactionId);
