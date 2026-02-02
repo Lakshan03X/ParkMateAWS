@@ -73,6 +73,72 @@ class AWSDemoService {
     }
   }
 
+  // Get all demo users (from DynamoDB and local)
+  async getAllDemoUsers(): Promise<DemoUserData[]> {
+    try {
+      console.log("🔍 Fetching all demo users from DynamoDB...");
+
+      // Try DynamoDB first
+      try {
+        const result = (await awsDynamoService.scan(
+          this.demoUsersTable
+        )) as any;
+
+        if (result.items && result.items.length > 0) {
+          console.log(`✅ Found ${result.items.length} demo users in DynamoDB`);
+
+          // Merge with local users (avoid duplicates based on NIC)
+          const allUsers = [...result.items];
+
+          for (const localUser of this.localDemoUsers) {
+            if (!allUsers.some((u) => u.nicNumber === localUser.nicNumber)) {
+              allUsers.push(localUser);
+            }
+          }
+
+          return allUsers;
+        }
+      } catch (e) {
+        console.warn(
+          "⚠️ Failed to scan DynamoDB, falling back to local data only"
+        );
+      }
+
+      // Fallback to local data
+      return this.localDemoUsers;
+    } catch (error) {
+      console.error("❌ Error fetching demo users:", error);
+      return this.localDemoUsers;
+    }
+  }
+
+  // Add new demo user
+  async addDemoUser(
+    user: DemoUserData
+  ): Promise<{ status: string; message: string; data?: any }> {
+    try {
+      console.log("➕ Adding new demo user:", user.fullName);
+
+      // Add to DynamoDB
+      await awsDynamoService.putItem(this.demoUsersTable, user);
+
+      // Also update local cache if needed, but for now just return success
+      console.log("✅ Demo user added to DynamoDB");
+
+      return {
+        status: "success",
+        message: "Demo user added successfully",
+        data: user,
+      };
+    } catch (error: any) {
+      console.error("❌ Error adding demo user:", error);
+      return {
+        status: "error",
+        message: error.message || "Failed to add demo user",
+      };
+    }
+  }
+
   // Verify NIC from DynamoDB first, then fall back to local data
   async verifyNIC(nicNumber: string): Promise<{
     status: string;
@@ -152,8 +218,10 @@ class AWSDemoService {
     try {
       console.log("📱 Sending OTP to:", mobileNumber);
 
-      // Generate a 6-digit OTP
-      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      // Generate a 4-digit OTP
+      // const otp = Math.floor(1000 + Math.random() * 9000).toString();
+      // Fixed OTP for testing
+      const otp = "1234";
 
       // Create a transaction ID
       const transactionId = `TXN_${Date.now()}_${Math.random()
@@ -201,16 +269,21 @@ class AWSDemoService {
   }> {
     try {
       console.log("🔍 Verifying OTP for transaction:", transactionId);
+      console.log("🔍 Entered OTP:", otp);
 
       const otpData = this.otpStore.get(transactionId);
 
       if (!otpData) {
+        console.log("❌ No OTP data found for transaction");
         return {
           status: "error",
           message: "Invalid transaction ID or OTP expired",
           verified: false,
         };
       }
+
+      console.log("🔍 Stored OTP:", otpData.otp);
+      console.log("🔍 OTP Match:", otpData.otp === otp);
 
       // Check if OTP is expired
       if (new Date() > otpData.expiresAt) {

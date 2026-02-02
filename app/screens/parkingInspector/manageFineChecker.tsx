@@ -66,7 +66,7 @@ const ManageFineChecker = () => {
     checkerId: "",
   });
 
-  // Load fine checkers from Firebase
+  // Load fine checkers from AWS DynamoDB
   useEffect(() => {
     loadFineCheckers();
   }, []);

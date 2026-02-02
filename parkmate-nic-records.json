@@ -1,0 +1,11 @@
+{
+  "TableName": "parkmate-nic-records",
+  "AttributeDefinitions": [
+    { "AttributeName": "nicNumber", "AttributeType": "S" }
+  ],
+  "KeySchema": [{ "AttributeName": "nicNumber", "KeyType": "HASH" }],
+  "ProvisionedThroughput": {
+    "ReadCapacityUnits": 5,
+    "WriteCapacityUnits": 5
+  }
+}

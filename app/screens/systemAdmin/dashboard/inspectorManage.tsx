@@ -53,7 +53,7 @@ const InspectorManage = () => {
     inspectorId: "",
   });
 
-  // Load inspectors from Firebase
+  // Load inspectors from AWS DynamoDB
   useEffect(() => {
     loadInspectors();
   }, []);

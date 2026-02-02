@@ -1,17 +1,4 @@
-import {
-  collection,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  doc,
-  getDocs,
-  query,
-  where,
-  orderBy,
-  Timestamp,
-  setDoc,
-} from "firebase/firestore";
-import { db } from "./firebase";
+import awsDynamoService from "./awsDynamoService";
 
 export interface VehicleOwner {
   id: string;
@@ -33,24 +20,25 @@ class VehicleOwnerService {
    */
   async getAllOwners(): Promise<VehicleOwner[]> {
     try {
-      const ownersRef = collection(db, COLLECTION_NAME);
-      const q = query(ownersRef, orderBy("createdAt", "desc"));
-      const querySnapshot = await getDocs(q);
+      const result = await awsDynamoService.scan(COLLECTION_NAME);
 
-      const owners: VehicleOwner[] = [];
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        owners.push({
-          id: doc.id,
-          name: data.name,
-          mobileNumber: data.mobileNumber,
-          status: data.status || "online",
-          nicNumber: data.nicNumber,
-          email: data.email,
-          registeredDate: data.registeredDate,
-          createdAt: data.createdAt,
-          updatedAt: data.updatedAt,
-        });
+      const owners: VehicleOwner[] = (result.items || []).map((data: any) => ({
+        id: data.id || data.vehicleOwnerId,
+        name: data.name,
+        mobileNumber: data.mobileNumber,
+        status: data.status || "online",
+        nicNumber: data.nicNumber,
+        email: data.email || "",
+        registeredDate: data.registeredDate,
+        createdAt: data.createdAt,
+        updatedAt: data.updatedAt,
+      }));
+
+      // Sort desc by createdAt
+      owners.sort((a, b) => {
+        const dateA = new Date(a.createdAt).getTime();
+        const dateB = new Date(b.createdAt).getTime();
+        return dateB - dateA;
       });
 
       return owners;
@@ -65,19 +53,19 @@ class VehicleOwnerService {
    */
   async addOwner(ownerData: Omit<VehicleOwner, "id">): Promise<VehicleOwner> {
     try {
+      const id = `VO_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+
       const newOwner = {
+        id,
         ...ownerData,
         status: ownerData.status || "online",
-        createdAt: Timestamp.now(),
-        updatedAt: Timestamp.now(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       };
 
-      const docRef = await addDoc(collection(db, COLLECTION_NAME), newOwner);
+      await awsDynamoService.putItem(COLLECTION_NAME, newOwner);
 
-      return {
-        id: docRef.id,
-        ...ownerData,
-      };
+      return newOwner;
     } catch (error) {
       console.error("Error adding vehicle owner:", error);
       throw new Error("Failed to add vehicle owner");
@@ -92,11 +80,14 @@ class VehicleOwnerService {
     updates: Partial<VehicleOwner>
   ): Promise<void> {
     try {
-      const ownerRef = doc(db, COLLECTION_NAME, ownerId);
-      await updateDoc(ownerRef, {
-        ...updates,
-        updatedAt: Timestamp.now(),
-      });
+      await awsDynamoService.updateItem(
+        COLLECTION_NAME,
+        { id: ownerId },
+        {
+          ...updates,
+          updatedAt: new Date().toISOString(),
+        }
+      );
     } catch (error) {
       console.error("Error updating vehicle owner:", error);
       throw new Error("Failed to update vehicle owner");
@@ -108,8 +99,7 @@ class VehicleOwnerService {
    */
   async deleteOwner(ownerId: string): Promise<void> {
     try {
-      const ownerRef = doc(db, COLLECTION_NAME, ownerId);
-      await deleteDoc(ownerRef);
+      await awsDynamoService.deleteItem(COLLECTION_NAME, { id: ownerId });
     } catch (error) {
       console.error("Error deleting vehicle owner:", error);
       throw new Error("Failed to delete vehicle owner");
@@ -121,14 +111,13 @@ class VehicleOwnerService {
    */
   async searchOwners(searchTerm: string): Promise<VehicleOwner[]> {
     try {
-      const ownersRef = collection(db, COLLECTION_NAME);
-      const querySnapshot = await getDocs(ownersRef);
+      const result = await awsDynamoService.scan(COLLECTION_NAME);
+      const allOwners = result.items || [];
 
       const owners: VehicleOwner[] = [];
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
+      allOwners.forEach((data: any) => {
         const owner = {
-          id: doc.id,
+          id: data.id,
           name: data.name,
           mobileNumber: data.mobileNumber,
           status: data.status || "online",
@@ -162,28 +151,31 @@ class VehicleOwnerService {
     status: "online" | "offline"
   ): Promise<VehicleOwner[]> {
     try {
-      const ownersRef = collection(db, COLLECTION_NAME);
-      const q = query(
-        ownersRef,
-        where("status", "==", status),
-        orderBy("createdAt", "desc")
-      );
-      const querySnapshot = await getDocs(q);
+      const result = await awsDynamoService.scan(COLLECTION_NAME);
+      const allOwners = result.items || [];
 
       const owners: VehicleOwner[] = [];
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        owners.push({
-          id: doc.id,
-          name: data.name,
-          mobileNumber: data.mobileNumber,
-          status: data.status,
-          nicNumber: data.nicNumber,
-          email: data.email,
-          registeredDate: data.registeredDate,
-          createdAt: data.createdAt,
-          updatedAt: data.updatedAt,
-        });
+      allOwners.forEach((data: any) => {
+        if (data.status === status) {
+          owners.push({
+            id: data.id,
+            name: data.name,
+            mobileNumber: data.mobileNumber,
+            status: data.status,
+            nicNumber: data.nicNumber,
+            email: data.email,
+            registeredDate: data.registeredDate,
+            createdAt: data.createdAt,
+            updatedAt: data.updatedAt,
+          });
+        }
+      });
+
+      // Sort desc by createdAt
+      owners.sort((a, b) => {
+        const dateA = new Date(a.createdAt).getTime();
+        const dateB = new Date(b.createdAt).getTime();
+        return dateB - dateA;
       });
 
       return owners;
@@ -248,19 +240,19 @@ class VehicleOwnerService {
    */
   async getOwnerByNIC(nicNumber: string): Promise<VehicleOwner | null> {
     try {
-      const ownersRef = collection(db, COLLECTION_NAME);
-      const q = query(ownersRef, where("nicNumber", "==", nicNumber));
-      const querySnapshot = await getDocs(q);
+      const result = await awsDynamoService.scan(COLLECTION_NAME);
+      const allOwners = result.items || [];
 
-      if (querySnapshot.empty) {
+      const ownerData = allOwners.find((o: any) => o.nicNumber === nicNumber);
+
+      if (!ownerData) {
         return null;
       }
 
-      const doc = querySnapshot.docs[0];
-      const data = doc.data();
+      const data = ownerData;
 
       return {
-        id: doc.id,
+        id: data.id,
         name: data.name,
         mobileNumber: data.mobileNumber,
         status: data.status || "online",

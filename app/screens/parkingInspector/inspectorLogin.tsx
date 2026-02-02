@@ -20,7 +20,7 @@ import {
 } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import inspectorService from "../../services/inspectorService";
-import firebaseDemoService from "../../services/firebaseDemoService";
+import awsDemoService from "../../services/awsDemoService";
 
 const InspectorLogin = () => {
   const router = useRouter();
@@ -42,7 +42,7 @@ const InspectorLogin = () => {
     try {
       setIsVerifying(true);
 
-      // Verify inspector credentials in Firebase
+      // Verify inspector credentials in AWS DynamoDB
       console.log("🔍 Verifying inspector credentials...");
       const verificationResult = await inspectorService.verifyInspectorLogin(
         employeeId,
@@ -59,7 +59,7 @@ const InspectorLogin = () => {
         const inspector = verificationResult.inspector;
 
         // Send OTP
-        const otpResult = await firebaseDemoService.requestOTP(
+        const otpResult = await awsDemoService.requestOTP(
           employeeId, // Using employeeId as identifier
           mobileNumber
         );

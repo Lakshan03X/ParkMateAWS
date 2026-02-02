@@ -17,12 +17,10 @@ import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
-import { doc, getDoc, updateDoc, Timestamp } from "firebase/firestore";
-import { db } from "../../services/firebase";
-import firebaseDemoService from "../../services/firebaseDemoService";
+import awsDynamoService from "../../services/awsDynamoService";
+import awsDemoService from "../../services/awsDemoService";
+import awsS3Service from "../../services/awsS3Service";
 import * as ImagePicker from "expo-image-picker";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { storage } from "../../services/firebase";
 
 const Profile = () => {
   const router = useRouter();
@@ -49,9 +47,11 @@ const Profile = () => {
   const loadUserData = async () => {
     if (params.userId) {
       try {
-        const userDoc = await getDoc(doc(db, "users", params.userId as string));
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
+        const result = await awsDynamoService.getItem("users", {
+          userId: params.userId,
+        });
+        if (result.item) {
+          const userData = result.item;
           setFullName(userData.fullName || "");
           setMobileNumber(userData.mobileNumber || "");
           setEmail(userData.email || "");
@@ -78,7 +78,7 @@ const Profile = () => {
       if (lib.status !== "granted") {
         Alert.alert(
           "Permission required",
-          "Permission to access media library is required to update profile picture."
+          "Permission to access media library is required to update profile picture.",
         );
         return false;
       }
@@ -96,45 +96,30 @@ const Profile = () => {
     if (!params.userId) throw new Error("User ID not found");
     setIsUploadingImage(true);
     try {
-      const response = await fetch(uri);
-      const blob = await response.blob();
-      // determine content type from uri
-      let contentType = "image/jpeg";
-      if (uri.endsWith(".png")) contentType = "image/png";
-
-      const storageRef = ref(
-        storage,
-        `profileImages/${params.userId}_${Date.now()}`
+      // Upload to AWS S3
+      const downloadUrl = await awsS3Service.uploadImage(
+        uri,
+        "profileImages",
+        `${params.userId}_${Date.now()}`,
       );
-      await uploadBytes(storageRef, blob, { contentType });
-      const downloadUrl = await getDownloadURL(storageRef);
-      // update user document immediately with photo URL
-      const userRef = doc(db, "users", params.userId as string);
-      await updateDoc(userRef, {
-        profileImage: downloadUrl,
-        updatedAt: Timestamp.now(),
-      });
+
+      // Update user document with photo URL
+      await awsDynamoService.updateItem(
+        "users",
+        { userId: params.userId },
+        {
+          profileImage: downloadUrl,
+          updatedAt: new Date().toISOString(),
+        },
+      );
       setProfileImage(downloadUrl);
       return downloadUrl;
     } catch (err: any) {
       console.error("Upload error:", err);
-      // include firebase storage bucket in hint
-      try {
-        const Constants = await import("expo-constants");
-        const extra = (Constants as any).expoConfig?.extra || {};
-        const bucket = extra.FIREBASE_STORAGE_BUCKET || "(not set)";
-        Alert.alert(
-          "Upload failed",
-          `Failed to upload image.\nCode: ${err.code || "unknown"}\nMessage: ${
-            err.message || String(err)
-          }\nStorage bucket: ${bucket}`
-        );
-      } catch (e) {
-        Alert.alert(
-          "Upload failed",
-          `${err.code || "unknown"}: ${err.message || String(err)}`
-        );
-      }
+      Alert.alert(
+        "Upload failed",
+        `Failed to upload image.\nMessage: ${err.message || String(err)}`,
+      );
       throw err;
     } finally {
       setIsUploadingImage(false);
@@ -194,7 +179,7 @@ const Profile = () => {
 
     setIsVerifying(true);
     try {
-      const result = await firebaseDemoService.verifyNIC(nicNumber);
+      const result = await awsDemoService.verifyNIC(nicNumber);
 
       if (result.status === "success" && result.data) {
         setAddress(result.data.address);
@@ -202,7 +187,7 @@ const Profile = () => {
       } else {
         Alert.alert(
           "Verification Failed",
-          "Unable to verify NIC. Please check the number."
+          "Unable to verify NIC. Please check the number.",
         );
       }
     } catch (error: any) {
@@ -226,12 +211,11 @@ const Profile = () => {
 
     setIsLoading(true);
     try {
-      const userRef = doc(db, "users", params.userId as string);
       const updateData: any = {
         fullName,
         mobileNumber,
         email,
-        updatedAt: Timestamp.now(),
+        updatedAt: new Date().toISOString(),
       };
 
       // Add NIC and address if provided
@@ -246,7 +230,11 @@ const Profile = () => {
         updateData.profileImage = profileImage;
       }
 
-      await updateDoc(userRef, updateData);
+      await awsDynamoService.updateItem(
+        "users",
+        { userId: params.userId },
+        updateData,
+      );
 
       Alert.alert("Success", "Profile updated successfully!", [
         {
@@ -285,7 +273,13 @@ const Profile = () => {
         {/* Back Button */}
         <TouchableOpacity
           style={[styles.backButton, { top: insets.top + 10 }]}
-          onPress={() => router.back()}
+          onPress={() => {
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.replace("/screens/parkingOwner/ownerDashboard");
+            }
+          }}
           activeOpacity={0.7}
         >
           <Ionicons name="arrow-back" size={24} color="#FFFFFF" />

@@ -1,0 +1,13 @@
+{
+  "TableName": "parkmate-parking-zones",
+  "AttributeDefinitions": [
+    { "AttributeName": "zoneId", "AttributeType": "S" }
+  ],
+  "KeySchema": [
+    { "AttributeName": "zoneId", "KeyType": "HASH" }
+  ],
+  "ProvisionedThroughput": {
+    "ReadCapacityUnits": 5,
+    "WriteCapacityUnits": 5
+  }
+}

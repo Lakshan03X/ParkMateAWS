@@ -150,7 +150,7 @@ const CheckerProfile = () => {
     try {
       setIsSaving(true);
 
-      // Update checker details in Firebase
+      // Update checker details in AWS DynamoDB
       await fineCheckerService.updateFineChecker(params.checkerId as string, {
         fullName: name.trim(),
         email: email.trim(),
@@ -211,7 +211,13 @@ const CheckerProfile = () => {
         {/* Back Button */}
         <TouchableOpacity
           style={[styles.backButton, { top: insets.top + 10 }]}
-          onPress={() => router.back()}
+          onPress={() => {
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.replace("/screens/fineChecker/fineCheckerDashboard");
+            }
+          }}
           activeOpacity={0.7}
         >
           <Ionicons name="arrow-back" size={24} color="#FFFFFF" />

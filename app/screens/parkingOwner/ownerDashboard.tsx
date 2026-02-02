@@ -15,8 +15,7 @@ import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "../../services/firebase";
+import awsDynamoService from "../../services/awsDynamoService";
 
 const OwnerDashboard = () => {
   const router = useRouter();
@@ -37,11 +36,10 @@ const OwnerDashboard = () => {
     const checkProfileStatus = async () => {
       if (params.userId) {
         try {
-          const userDoc = await getDoc(
-            doc(db, "users", params.userId as string)
-          );
-          if (userDoc.exists()) {
-            const userData = userDoc.data();
+          const result = await awsDynamoService.getItem("users", { userId: params.userId });
+
+          if (result.item) {
+            const userData = result.item;
             const isComplete =
               userData.profileComplete !== false && userData.nicNumber != null;
             setProfileComplete(isComplete);

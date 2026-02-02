@@ -19,18 +19,7 @@ import {
 } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
-import {
-  collection,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  doc,
-  getDocs,
-  query,
-  orderBy,
-  Timestamp,
-} from "firebase/firestore";
-import { db } from "../../services/firebase";
+import awsDynamoService from "../../services/awsDynamoService";
 
 interface ParkingRevenue {
   id: string;
@@ -76,7 +65,7 @@ const ParkingRevenue = () => {
 
   const COLLECTION_NAME = "parkingRevenue";
 
-  // Load parking revenues from Firebase
+  // Load parking revenues from AWS DynamoDB
   useEffect(() => {
     loadParkingRevenues();
   }, []);
@@ -84,23 +73,24 @@ const ParkingRevenue = () => {
   const loadParkingRevenues = async () => {
     try {
       setIsLoading(true);
-      const revenuesRef = collection(db, COLLECTION_NAME);
-      const q = query(revenuesRef, orderBy("createdAt", "desc"));
-      const querySnapshot = await getDocs(q);
+      const result = await awsDynamoService.scan(COLLECTION_NAME);
 
-      const revenuesData: ParkingRevenue[] = [];
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        revenuesData.push({
-          id: doc.id,
-          boralesgamuwa: data.boralesgamuwa,
-          zoneCode: data.zoneCode,
-          location: data.location,
-          zoneType: data.zoneType,
-          parkingRatePerHour: data.parkingRatePerHour,
-          createdAt: data.createdAt,
-          updatedAt: data.updatedAt,
-        });
+      const revenuesData: ParkingRevenue[] = (result.items || []).map((item: any) => ({
+        id: item.id || item.revenueId, // Fallback if id is stored differently
+        boralesgamuwa: item.boralesgamuwa,
+        zoneCode: item.zoneCode,
+        location: item.location,
+        zoneType: item.zoneType,
+        parkingRatePerHour: item.parkingRatePerHour,
+        createdAt: item.createdAt,
+        updatedAt: item.updatedAt,
+      }));
+
+      // Sort by createdAt desc (client-side since we scanned)
+      revenuesData.sort((a, b) => {
+        const dateA = new Date(a.createdAt).getTime();
+        const dateB = new Date(b.createdAt).getTime();
+        return dateB - dateA;
       });
 
       setRevenues(revenuesData);
@@ -162,17 +152,21 @@ const ParkingRevenue = () => {
     try {
       setIsSaving(true);
 
+      // Generate ID
+      const revenueId = `REV_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+
       const newRevenue = {
+        id: revenueId,
         boralesgamuwa: formData.boralesgamuwa,
         zoneCode: formData.zoneCode,
         location: formData.location,
         zoneType: formData.zoneType,
         parkingRatePerHour: formData.parkingRatePerHour,
-        createdAt: Timestamp.now(),
-        updatedAt: Timestamp.now(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       };
 
-      await addDoc(collection(db, COLLECTION_NAME), newRevenue);
+      await awsDynamoService.putItem(COLLECTION_NAME, newRevenue);
 
       await loadParkingRevenues();
 
@@ -217,15 +211,18 @@ const ParkingRevenue = () => {
     try {
       setIsSaving(true);
 
-      const revenueRef = doc(db, COLLECTION_NAME, selectedRevenue.id);
-      await updateDoc(revenueRef, {
-        boralesgamuwa: formData.boralesgamuwa,
-        zoneCode: formData.zoneCode,
-        location: formData.location,
-        zoneType: formData.zoneType,
-        parkingRatePerHour: formData.parkingRatePerHour,
-        updatedAt: Timestamp.now(),
-      });
+      await awsDynamoService.updateItem(
+        COLLECTION_NAME,
+        { id: selectedRevenue.id },
+        {
+          boralesgamuwa: formData.boralesgamuwa,
+          zoneCode: formData.zoneCode,
+          location: formData.location,
+          zoneType: formData.zoneType,
+          parkingRatePerHour: formData.parkingRatePerHour,
+          updatedAt: new Date().toISOString(),
+        }
+      );
 
       await loadParkingRevenues();
 
@@ -253,8 +250,7 @@ const ParkingRevenue = () => {
     try {
       setIsSaving(true);
 
-      const revenueRef = doc(db, COLLECTION_NAME, selectedRevenue.id);
-      await deleteDoc(revenueRef);
+      await awsDynamoService.deleteItem(COLLECTION_NAME, { id: selectedRevenue.id });
 
       await loadParkingRevenues();
 

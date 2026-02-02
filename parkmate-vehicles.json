@@ -1,0 +1,23 @@
+{
+  "TableName": "parkmate-vehicles",
+  "AttributeDefinitions": [
+    { "AttributeName": "vehicleNumber", "AttributeType": "S" },
+    { "AttributeName": "ownerId", "AttributeType": "S" }
+  ],
+  "KeySchema": [{ "AttributeName": "vehicleNumber", "KeyType": "HASH" }],
+  "GlobalSecondaryIndexes": [
+    {
+      "IndexName": "ownerId-index",
+      "KeySchema": [{ "AttributeName": "ownerId", "KeyType": "HASH" }],
+      "Projection": { "ProjectionType": "ALL" },
+      "ProvisionedThroughput": {
+        "ReadCapacityUnits": 5,
+        "WriteCapacityUnits": 5
+      }
+    }
+  ],
+  "ProvisionedThroughput": {
+    "ReadCapacityUnits": 5,
+    "WriteCapacityUnits": 5
+  }
+}

@@ -53,7 +53,7 @@ const MCInspectorManage = () => {
     municipalCouncil: "",
   });
 
-  // Load inspectors from Firebase
+  // Load inspectors from AWS DynamoDB
   useEffect(() => {
     loadInspectors();
     // Set up real-time refresh every 5 seconds to sync with inspector dashboard

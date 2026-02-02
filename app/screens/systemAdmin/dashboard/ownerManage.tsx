@@ -50,7 +50,7 @@ const OwnerManage = () => {
     email: "",
   });
 
-  // Load owners from Firebase
+  // Load owners from AWS DynamoDB
   useEffect(() => {
     loadOwners();
   }, []);

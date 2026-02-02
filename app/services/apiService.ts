@@ -17,9 +17,9 @@ export interface UserRegistrationData {
 }
 
 class ApiService {
-  // Register user in Firebase after MOSIP verification
+  // Register user in AWS DynamoDB after MOSIP verification
   async registerUser(
-    userData: UserRegistrationData
+    userData: UserRegistrationData,
   ): Promise<{ status: string; message: string; userId?: string }> {
     try {
       // Check if user already exists
@@ -71,13 +71,13 @@ class ApiService {
   // Update user verification status
   async updateUserVerification(
     userId: string,
-    verified: boolean
+    verified: boolean,
   ): Promise<{ status: string; message: string }> {
     try {
       const result = await awsDynamoService.updateItem(
         "users",
         { userId },
-        { verified, verifiedAt: new Date().toISOString() }
+        { verified, verifiedAt: new Date().toISOString() },
       );
 
       if (!result.success) {
@@ -102,7 +102,7 @@ class ApiService {
 
   // Get user by NIC
   async getUserByNIC(
-    nicNumber: string
+    nicNumber: string,
   ): Promise<{ status: string; user?: any; message?: string }> {
     try {
       const result = await awsDynamoService.getItem("users", {
@@ -133,7 +133,7 @@ class ApiService {
   async initiateRegistration(
     nicNumber: string,
     mobileNumber: string,
-    email?: string
+    email?: string,
   ): Promise<{
     status: string;
     message: string;
@@ -155,7 +155,7 @@ class ApiService {
       // Step 2: Send OTP for verification
       const otpResponse = await awsDemoService.requestOTP(
         nicNumber,
-        mobileNumber
+        mobileNumber,
       );
       // For production, replace with: const otpResponse = await mosipService.requestOTP(nicNumber, mobileNumber);
 
@@ -185,13 +185,13 @@ class ApiService {
   async completeRegistration(
     transactionId: string,
     otp: string,
-    registrationData: UserRegistrationData
+    registrationData: UserRegistrationData,
   ): Promise<{ status: string; message: string; userId?: string }> {
     try {
       // Step 1: Verify OTP
       const otpVerification = await awsDemoService.verifyOTP(
         transactionId,
-        otp
+        otp,
       );
       // For production, replace with: const otpVerification = await mosipService.verifyOTP(transactionId, otp);
 

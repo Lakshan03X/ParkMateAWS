@@ -78,7 +78,7 @@ const ConfigureZone = () => {
     totalParkingSpots: "",
   });
 
-  // Load parking zones from Firebase
+  // Load parking zones from AWS DynamoDB
   useEffect(() => {
     loadParkingZones();
   }, []);

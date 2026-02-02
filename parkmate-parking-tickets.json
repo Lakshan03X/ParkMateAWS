@@ -1,0 +1,27 @@
+{
+  "TableName": "parkmate-parking-tickets",
+  "AttributeDefinitions": [
+    { "AttributeName": "ticketId", "AttributeType": "S" },
+    { "AttributeName": "vehicleNumber", "AttributeType": "S" }
+  ],
+  "KeySchema": [
+    { "AttributeName": "ticketId", "KeyType": "HASH" }
+  ],
+  "GlobalSecondaryIndexes": [
+    {
+      "IndexName": "vehicleNumber-index",
+      "KeySchema": [
+        { "AttributeName": "vehicleNumber", "KeyType": "HASH" }
+      ],
+      "Projection": { "ProjectionType": "ALL" },
+      "ProvisionedThroughput": {
+        "ReadCapacityUnits": 5,
+        "WriteCapacityUnits": 5
+      }
+    }
+  ],
+  "ProvisionedThroughput": {
+    "ReadCapacityUnits": 5,
+    "WriteCapacityUnits": 5
+  }
+}

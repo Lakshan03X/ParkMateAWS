@@ -1,16 +1,4 @@
-import {
-  addDoc,
-  collection,
-  deleteDoc,
-  doc,
-  getDoc,
-  getDocs,
-  query,
-  Timestamp,
-  updateDoc,
-  where,
-} from "firebase/firestore";
-import { db } from "./firebase";
+import awsDynamoService from "./awsDynamoService";
 
 export interface Fine {
   id: string;
@@ -80,26 +68,22 @@ class ParkingTicketService {
     vehicleNumber: string
   ): Promise<ParkingTicket | null> {
     try {
-      const ticketsRef = collection(db, this.TICKETS_COLLECTION);
-      const q = query(
-        ticketsRef,
-        where("vehicleNumber", "==", vehicleNumber.toUpperCase()),
-        where("isActive", "==", true),
-        where("isCancelled", "==", false)
+      // Fetch all tickets and filter in memory since we can't do complex querying with scan easily
+      const result = await awsDynamoService.scan(this.TICKETS_COLLECTION);
+      const allTickets = result.items || [];
+
+      const activeTicket = allTickets.find((ticket: any) =>
+        ticket.vehicleNumber === vehicleNumber.toUpperCase() &&
+        ticket.isActive === true &&
+        ticket.isCancelled === false
       );
 
-      const querySnapshot = await getDocs(q);
-
-      if (querySnapshot.empty) {
+      if (!activeTicket) {
         return null;
       }
 
-      // Get the first active ticket
-      const ticketDoc = querySnapshot.docs[0];
-      const ticketData = ticketDoc.data();
-
       // Calculate time remaining
-      const endTime = new Date(ticketData.endTime);
+      const endTime = new Date(activeTicket.endTime);
       const now = new Date();
       const timeRemaining = Math.max(
         0,
@@ -109,16 +93,16 @@ class ParkingTicketService {
       // Check if ticket has expired
       if (timeRemaining <= 0) {
         // Mark ticket as inactive
-        await updateDoc(doc(db, this.TICKETS_COLLECTION, ticketDoc.id), {
+        await awsDynamoService.updateItem(this.TICKETS_COLLECTION, { id: activeTicket.id }, {
           isActive: false,
-          updatedAt: Timestamp.now(),
+          updatedAt: new Date().toISOString(),
         });
         return null;
       }
 
       return {
-        id: ticketDoc.id,
-        ...ticketData,
+        id: activeTicket.id,
+        ...activeTicket,
         timeRemaining,
       } as ParkingTicket;
     } catch (error) {
@@ -132,43 +116,27 @@ class ParkingTicketService {
    */
   async checkOutstandingFines(vehicleNumber: string): Promise<Fine | null> {
     try {
-      const finesRef = collection(db, this.FINES_COLLECTION);
+      const result = await awsDynamoService.scan(this.FINES_COLLECTION);
+      const allFines = result.items || [];
 
-      // Simple query without orderBy to avoid index requirement
-      const q = query(
-        finesRef,
-        where("vehicleNumber", "==", vehicleNumber.toUpperCase())
+      // Filter fines for vehicle
+      const vehicleFines = allFines.filter((fine: any) =>
+        fine.vehicleNumber === vehicleNumber.toUpperCase() &&
+        !fine.isPaid
       );
 
-      const querySnapshot = await getDocs(q);
-
-      if (querySnapshot.empty) {
+      if (vehicleFines.length === 0) {
         return null;
       }
 
-      // Filter unpaid fines in memory
-      const unpaidFines = querySnapshot.docs
-        .map(
-          (doc) =>
-            ({
-              id: doc.id,
-              ...doc.data(),
-            } as Fine)
-        )
-        .filter((fine) => !fine.isPaid);
-
-      if (unpaidFines.length === 0) {
-        return null;
-      }
-
-      // Return the most recent unpaid fine (sort by createdAt in memory)
-      const sortedFines = unpaidFines.sort((a, b) => {
-        const aTime = a.createdAt?.toMillis?.() || 0;
-        const bTime = b.createdAt?.toMillis?.() || 0;
+      // Return the most recent unpaid fine (sort by createdAt)
+      vehicleFines.sort((a: any, b: any) => {
+        const aTime = new Date(a.createdAt).getTime();
+        const bTime = new Date(b.createdAt).getTime();
         return bTime - aTime;
       });
 
-      return sortedFines[0];
+      return vehicleFines[0] as Fine;
     } catch (error) {
       console.error("Error checking outstanding fines:", error);
       throw new Error("Failed to check outstanding fines");
@@ -176,34 +144,31 @@ class ParkingTicketService {
   }
 
   /**
-   * Get parking zone rate from Firebase
+   * Get parking zone rate from AWS DynamoDB
    */
   private async getParkingZoneRate(parkingZone: string): Promise<number> {
     try {
-      const zonesRef = collection(db, this.ZONES_COLLECTION);
+      const result = await awsDynamoService.scan(this.ZONES_COLLECTION);
+      const allZones = result.items || [];
 
       // Extract location from formatted string (e.g., "Zone A - Location Name")
       let locationToSearch = parkingZone;
       if (parkingZone.includes(" - ")) {
-        // If it's formatted as "Zone A - Location Name", extract the location part
         locationToSearch = parkingZone.split(" - ")[1].trim();
       }
 
       // Try to find by location
-      let q = query(zonesRef, where("location", "==", locationToSearch));
-      let querySnapshot = await getDocs(q);
+      let foundZone = allZones.find((zone: any) => zone.location === locationToSearch);
 
       // If not found by location, try by zone code
-      if (querySnapshot.empty && parkingZone.includes(" - ")) {
+      if (!foundZone && parkingZone.includes(" - ")) {
         const zoneCode = parkingZone.split(" - ")[0].trim();
-        q = query(zonesRef, where("zoneCode", "==", zoneCode));
-        querySnapshot = await getDocs(q);
+        foundZone = allZones.find((zone: any) => zone.zoneCode === zoneCode);
       }
 
-      if (!querySnapshot.empty) {
-        const zoneData = querySnapshot.docs[0].data();
+      if (foundZone) {
         // Parse the parking rate string (e.g., "Rs. 150 per hour" or "150")
-        const rateString = zoneData.parkingRate;
+        const rateString = foundZone.parkingRate;
         const rateMatch = rateString.match(/(\d+)/);
         if (rateMatch) {
           const rate = parseInt(rateMatch[1]);
@@ -230,16 +195,18 @@ class ParkingTicketService {
     duration: string
   ): Promise<ParkingTicket> {
     try {
+      const id = `TICKET_${Date.now()}_${Math.floor(1000 + Math.random() * 9000)}`;
       const ticketId = `CBC${Math.floor(1000 + Math.random() * 9000)}`;
       const startTime = new Date();
       const durationMinutes = this.parseDuration(duration);
       const endTime = new Date(startTime.getTime() + durationMinutes * 60000);
 
-      // Get the actual parking rate from Firebase
+      // Get the actual parking rate from AWS DynamoDB
       const zoneRate = await this.getParkingZoneRate(parkingZone);
       const parkingFee = this.calculateParkingFeeWithRate(duration, zoneRate);
 
       const ticketData = {
+        id,
         vehicleNumber: vehicleNumber.toUpperCase(),
         ticketId,
         parkingZone,
@@ -253,19 +220,13 @@ class ParkingTicketService {
         isCancelled: false,
         isActive: true,
         canCancel: false, // disabled for first 10 minutes
-        createdAt: Timestamp.now(),
-        updatedAt: Timestamp.now(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       };
 
-      const docRef = await addDoc(
-        collection(db, this.TICKETS_COLLECTION),
-        ticketData
-      );
+      await awsDynamoService.putItem(this.TICKETS_COLLECTION, ticketData);
 
-      return {
-        id: docRef.id,
-        ...ticketData,
-      };
+      return ticketData as ParkingTicket;
     } catch (error) {
       console.error("Error creating parking ticket:", error);
       throw new Error("Failed to create parking ticket");
@@ -277,16 +238,14 @@ class ParkingTicketService {
    */
   async getTicketById(ticketId: string): Promise<ParkingTicket | null> {
     try {
-      const ticketsRef = collection(db, this.TICKETS_COLLECTION);
-      const q = query(ticketsRef, where("ticketId", "==", ticketId));
-      const querySnapshot = await getDocs(q);
+      // Find by ticketId field (not doc id)
+      const result = await awsDynamoService.scan(this.TICKETS_COLLECTION);
+      const allTickets = result.items || [];
 
-      if (!querySnapshot.empty) {
-        const doc = querySnapshot.docs[0];
-        return {
-          id: doc.id,
-          ...doc.data(),
-        } as ParkingTicket;
+      const ticket = allTickets.find((t: any) => t.ticketId === ticketId);
+
+      if (ticket) {
+        return ticket as ParkingTicket;
       }
 
       return null;
@@ -304,19 +263,12 @@ class ParkingTicketService {
     canCancel: boolean
   ): Promise<void> {
     try {
-      const ticketsRef = collection(db, this.TICKETS_COLLECTION);
-      const q = query(ticketsRef, where("ticketId", "==", ticketId));
-      const querySnapshot = await getDocs(q);
+      const ticket = await this.getTicketById(ticketId);
 
-      if (!querySnapshot.empty) {
-        const docRef = doc(
-          db,
-          this.TICKETS_COLLECTION,
-          querySnapshot.docs[0].id
-        );
-        await updateDoc(docRef, {
+      if (ticket) {
+        await awsDynamoService.updateItem(this.TICKETS_COLLECTION, { id: ticket.id }, {
           canCancel,
-          updatedAt: Timestamp.now(),
+          updatedAt: new Date().toISOString(),
         });
       }
     } catch (error) {
@@ -353,33 +305,21 @@ class ParkingTicketService {
         new Date(ticket.endTime).getTime() + additionalMinutes * 60000
       );
 
-      const ticketsRef = collection(db, this.TICKETS_COLLECTION);
-      const q = query(ticketsRef, where("ticketId", "==", ticketId));
-      const querySnapshot = await getDocs(q);
+      await awsDynamoService.updateItem(this.TICKETS_COLLECTION, { id: ticket.id }, {
+        endTime: newEndTime.toISOString(),
+        parkingFee: ticket.parkingFee + additionalFee,
+        timeRemaining: ticket.timeRemaining + additionalMinutes * 60,
+        parkingRate: zoneRate, // Update the rate
+        updatedAt: new Date().toISOString(),
+      });
 
-      if (!querySnapshot.empty) {
-        const docRef = doc(
-          db,
-          this.TICKETS_COLLECTION,
-          querySnapshot.docs[0].id
-        );
-        await updateDoc(docRef, {
-          endTime: newEndTime.toISOString(),
-          parkingFee: ticket.parkingFee + additionalFee,
-          timeRemaining: ticket.timeRemaining + additionalMinutes * 60,
-          parkingRate: zoneRate, // Update the rate
-          updatedAt: Timestamp.now(),
-        });
+      return {
+        ...ticket,
+        endTime: newEndTime.toISOString(),
+        parkingFee: ticket.parkingFee + additionalFee,
+        timeRemaining: ticket.timeRemaining + additionalMinutes * 60,
+      };
 
-        return {
-          ...ticket,
-          endTime: newEndTime.toISOString(),
-          parkingFee: ticket.parkingFee + additionalFee,
-          timeRemaining: ticket.timeRemaining + additionalMinutes * 60,
-        };
-      }
-
-      throw new Error("Failed to extend parking time");
     } catch (error) {
       console.error("Error extending parking time:", error);
       throw new Error("Failed to extend parking time");
@@ -391,36 +331,24 @@ class ParkingTicketService {
    */
   async cancelTicket(ticketId: string): Promise<void> {
     try {
-      const ticketsRef = collection(db, this.TICKETS_COLLECTION);
-      const q = query(ticketsRef, where("ticketId", "==", ticketId));
-      const querySnapshot = await getDocs(q);
+      const ticket = await this.getTicketById(ticketId);
 
-      if (!querySnapshot.empty) {
-        const docRef = doc(
-          db,
-          this.TICKETS_COLLECTION,
-          querySnapshot.docs[0].id
-        );
-        await updateDoc(docRef, {
+      if (ticket) {
+        await awsDynamoService.updateItem(this.TICKETS_COLLECTION, { id: ticket.id }, {
           isCancelled: true,
           isActive: false,
           cancelledAt: new Date().toISOString(),
-          updatedAt: Timestamp.now(),
+          updatedAt: new Date().toISOString(),
         });
 
-        // Remove all associated fines (both paid and unpaid)
-        const finesRef = collection(db, this.FINES_COLLECTION);
-        const fineQuery = query(
-          finesRef,
-          where("ticketId", "==", ticketId)
-        );
-        const fineSnapshot = await getDocs(fineQuery);
+        // Remove all associated fines
+        const result = await awsDynamoService.scan(this.FINES_COLLECTION);
+        const allFines = result.items || [];
+        const relatedFines = allFines.filter((f: any) => f.ticketId === ticketId);
 
-        // Delete all fines associated with this ticket
-        const deletePromises = fineSnapshot.docs.map((fineDoc) =>
-          deleteDoc(doc(db, this.FINES_COLLECTION, fineDoc.id))
-        );
-        await Promise.all(deletePromises);
+        for (const fine of relatedFines) {
+          await awsDynamoService.deleteItem(this.FINES_COLLECTION, { id: fine.id });
+        }
       }
     } catch (error) {
       console.error("Error cancelling ticket:", error);
@@ -433,23 +361,24 @@ class ParkingTicketService {
    */
   async payFine(fineId: string, paymentId: string): Promise<PaymentReceipt> {
     try {
-      const fineRef = doc(db, this.FINES_COLLECTION, fineId);
-      const fineDoc = await getDoc(fineRef);
+      const result = await awsDynamoService.getItem(this.FINES_COLLECTION, { id: fineId });
 
-      if (!fineDoc.exists()) {
+      if (!result.item) {
         throw new Error("Fine not found");
       }
 
-      const fineData = fineDoc.data() as Fine;
+      const fineData = result.item as Fine;
 
-      await updateDoc(fineRef, {
+      await awsDynamoService.updateItem(this.FINES_COLLECTION, { id: fineId }, {
         isPaid: true,
         paidAt: new Date().toISOString(),
         paymentId,
       });
 
       // Create receipt
+      const receiptId = `RECEIPT_${Date.now()}_${Math.floor(1000 + Math.random() * 9000)}`;
       const receiptData = {
+        id: receiptId,
         ticketId: fineData.ticketId,
         vehicleNumber: fineData.vehicleNumber,
         amount: fineData.fineAmount,
@@ -457,18 +386,12 @@ class ParkingTicketService {
         paymentId,
         transactionDate: new Date().toISOString(),
         type: "fine",
-        createdAt: Timestamp.now(),
+        createdAt: new Date().toISOString(),
       };
 
-      const receiptRef = await addDoc(
-        collection(db, this.RECEIPTS_COLLECTION),
-        receiptData
-      );
+      await awsDynamoService.putItem(this.RECEIPTS_COLLECTION, receiptData);
 
-      return {
-        id: receiptRef.id,
-        ...receiptData,
-      };
+      return receiptData;
     } catch (error) {
       console.error("Error processing fine payment:", error);
       throw new Error("Failed to process fine payment");
@@ -486,27 +409,18 @@ class ParkingTicketService {
       const ticket = await this.getTicketById(ticketId);
       if (!ticket) throw new Error("Ticket not found");
 
-      const ticketsRef = collection(db, this.TICKETS_COLLECTION);
-      const q = query(ticketsRef, where("ticketId", "==", ticketId));
-      const querySnapshot = await getDocs(q);
-
-      if (!querySnapshot.empty) {
-        const docRef = doc(
-          db,
-          this.TICKETS_COLLECTION,
-          querySnapshot.docs[0].id
-        );
-        await updateDoc(docRef, {
-          isPaid: true,
-          isActive: false,
-          paidAt: new Date().toISOString(),
-          paymentId,
-          updatedAt: Timestamp.now(),
-        });
-      }
+      await awsDynamoService.updateItem(this.TICKETS_COLLECTION, { id: ticket.id }, {
+        isPaid: true,
+        isActive: false,
+        paidAt: new Date().toISOString(),
+        paymentId,
+        updatedAt: new Date().toISOString(),
+      });
 
       // Create receipt
+      const receiptId = `RECEIPT_${Date.now()}_${Math.floor(1000 + Math.random() * 9000)}`;
       const receiptData = {
+        id: receiptId,
         ticketId: ticket.ticketId,
         vehicleNumber: ticket.vehicleNumber,
         amount: ticket.parkingFee,
@@ -514,18 +428,12 @@ class ParkingTicketService {
         paymentId,
         transactionDate: new Date().toISOString(),
         type: "parking",
-        createdAt: Timestamp.now(),
+        createdAt: new Date().toISOString(),
       };
 
-      const receiptRef = await addDoc(
-        collection(db, this.RECEIPTS_COLLECTION),
-        receiptData
-      );
+      await awsDynamoService.putItem(this.RECEIPTS_COLLECTION, receiptData);
 
-      return {
-        id: receiptRef.id,
-        ...receiptData,
-      };
+      return receiptData;
     } catch (error) {
       console.error("Error processing ticket payment:", error);
       throw new Error("Failed to process ticket payment");
@@ -582,7 +490,9 @@ class ParkingTicketService {
    */
   async initializeSampleFine(vehicleNumber: string): Promise<void> {
     try {
+      const id = `FINE_${Date.now()}`;
       const fineData = {
+        id,
         vehicleNumber: vehicleNumber.toUpperCase(),
         ticketId: `AT${Math.floor(1000000 + Math.random() * 9000000)}`,
         entryTime: "9:41 AM",
@@ -595,10 +505,10 @@ class ParkingTicketService {
         location: "Temple Road, Maharagama",
         fineAmount: 1000,
         isPaid: false,
-        createdAt: Timestamp.now(),
+        createdAt: new Date().toISOString(),
       };
 
-      await addDoc(collection(db, this.FINES_COLLECTION), fineData);
+      await awsDynamoService.putItem(this.FINES_COLLECTION, fineData);
       console.log("Sample fine created successfully");
     } catch (error) {
       console.error("Error creating sample fine:", error);
@@ -610,19 +520,10 @@ class ParkingTicketService {
    */
   async getUnpaidFines(): Promise<Fine[]> {
     try {
-      const finesRef = collection(db, this.FINES_COLLECTION);
-      const q = query(finesRef, where("isPaid", "==", false));
-      const querySnapshot = await getDocs(q);
+      const result = await awsDynamoService.scan(this.FINES_COLLECTION);
+      const allFines = result.items || [];
 
-      const fines: Fine[] = querySnapshot.docs.map(
-        (d) =>
-          ({
-            id: d.id,
-            ...(d.data() as any),
-          } as Fine)
-      );
-
-      return fines;
+      return allFines.filter((f: any) => !f.isPaid) as Fine[];
     } catch (error) {
       console.error("Error fetching unpaid fines:", error);
       throw new Error("Failed to fetch unpaid fines");
@@ -634,13 +535,10 @@ class ParkingTicketService {
    */
   async getAllTickets(): Promise<ParkingTicket[]> {
     try {
-      const ticketsRef = collection(db, this.TICKETS_COLLECTION);
-      const querySnapshot = await getDocs(ticketsRef);
-
-      const tickets: ParkingTicket[] = querySnapshot.docs.map((d) => {
-        const data = d.data();
+      const result = await awsDynamoService.scan(this.TICKETS_COLLECTION);
+      const tickets = (result.items || []).map((data: any) => {
         return {
-          id: d.id,
+          id: data.id,
           vehicleNumber: (data.vehicleNumber as string) || "",
           ticketId: (data.ticketId as string) || "",
           parkingZone: (data.parkingZone as string) || "",
@@ -680,7 +578,9 @@ class ParkingTicketService {
       if (!ticket) throw new Error("Ticket not found");
 
       // Create a fine from the ticket
+      const fineId = `FINE_${Date.now()}`;
       const fineData = {
+        id: fineId,
         vehicleNumber: ticket.vehicleNumber,
         ticketId: ticket.ticketId,
         entryTime: ticket.startTime,
@@ -693,38 +593,21 @@ class ParkingTicketService {
         location: ticket.parkingZone,
         fineAmount: ticket.parkingFee,
         isPaid: false,
-        createdAt: Timestamp.now(),
+        createdAt: new Date().toISOString(),
       };
 
-      // Add fine to Firebase
-      const fineRef = await addDoc(
-        collection(db, this.FINES_COLLECTION),
-        fineData
-      );
+      // Add fine to AWS DynamoDB
+      await awsDynamoService.putItem(this.FINES_COLLECTION, fineData);
 
       // Mark ticket as inactive and link to fine
-      const ticketsRef = collection(db, this.TICKETS_COLLECTION);
-      const q = query(ticketsRef, where("ticketId", "==", ticketId));
-      const querySnapshot = await getDocs(q);
+      await awsDynamoService.updateItem(this.TICKETS_COLLECTION, { id: ticket.id }, {
+        isActive: false,
+        convertedToFine: true,
+        fineId: fineId,
+        updatedAt: new Date().toISOString(),
+      });
 
-      if (!querySnapshot.empty) {
-        const docRef = doc(
-          db,
-          this.TICKETS_COLLECTION,
-          querySnapshot.docs[0].id
-        );
-        await updateDoc(docRef, {
-          isActive: false,
-          convertedToFine: true,
-          fineId: fineRef.id,
-          updatedAt: Timestamp.now(),
-        });
-      }
-
-      return {
-        id: fineRef.id,
-        ...fineData,
-      } as Fine;
+      return fineData as Fine;
     } catch (error) {
       console.error("Error converting ticket to fine:", error);
       throw new Error("Failed to convert ticket to fine");

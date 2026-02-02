@@ -2,144 +2,283 @@
 
 A comprehensive mobile parking management application built with React Native and Expo, featuring AI-powered license plate recognition and AWS cloud backend.
 
-## ⚡ What's New - AWS Migration Complete!
+## ☁️ AWS Cloud Backend
 
-🎉 **This app now runs on AWS** instead of Firebase!
-- ✅ 100% Free Tier eligible
-- ✅ DynamoDB for database
-- ✅ API Gateway + Lambda for backend
-- ✅ S3 for file storage
-- ✅ All UI and features unchanged
+🎉 **Fully AWS-powered application!**
 
-**Quick Setup**: See [AWS_QUICK_START.md](./AWS_QUICK_START.md) (5 minutes)  
-**Full Guide**: See [AWS_DEPLOYMENT_GUIDE.md](./AWS_DEPLOYMENT_GUIDE.md)  
-**Migration Details**: See [MIGRATION_COMPLETE.md](./MIGRATION_COMPLETE.md)
+- ✅ **AWS DynamoDB** - NoSQL database for all data
+- ✅ **AWS Lambda** - Serverless backend functions
+- ✅ **API Gateway** - RESTful API endpoints
+- ✅ **S3** - File storage for images and documents
+- ✅ **100% Free Tier eligible** for small-scale use
+
+**Complete Setup Guide**: See [AWS_SETUP.md](./AWS_SETUP.md)
 
 ---
 
 ## 🚀 Quick Start
 
-1. **Install dependencies**
+### 1. Install Dependencies
 
-   ```bash
-   npm install
-   ```
+```bash
+npm install
+```
 
-2. **Setup AWS Backend (First Time)**
+### 2. Setup AWS Backend (Required - First Time Only)
 
-   Follow: [AWS_QUICK_START.md](./AWS_QUICK_START.md)
-   - Create AWS account (free)
-   - Set up DynamoDB tables
-   - Deploy Lambda function
-   - Update app.json with your AWS URLs
+Follow the complete guide: **[AWS_SETUP.md](./AWS_SETUP.md)**
 
-3. **Setup OCR (Required for License Plate Scanning)**
+Quick overview:
 
-   See **[SETUP_OCR_IN_3_STEPS.md](./SETUP_OCR_IN_3_STEPS.md)** for a 3-minute setup!
+- Create AWS account (free tier)
+- Set up 7 DynamoDB tables
+- Create S3 bucket for uploads
+- Deploy Lambda function
+- Create API Gateway endpoint
+- Update `app.json` with your API endpoint
 
-4. **Start the app**
+### 3. Configure Environment
 
-   ```bash
-   npx expo start
-   ```
+Update [app.json](app.json) with your AWS endpoint:
 
-In the output, you'll find options to open the app in a
+```json
+{
+  "expo": {
+    "extra": {
+      "AWS_REGION": "us-east-1",
+      "AWS_API_GATEWAY_URL": "https://YOUR_API_ID.execute-api.us-east-1.amazonaws.com/prod",
+      "AWS_S3_BUCKET": "parkmate-uploads"
+    }
+  }
+}
+```
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
+### 4. Setup OCR (Optional - for License Plate Scanning)
+
+Get a free Google Gemini API key:
+
+- Visit https://aistudio.google.com/app/apikey
+- Copy your API key
+- Update `EXPO_PUBLIC_GEMINI_API_KEY` in [.env.example](.env.example)
+
+### 5. Start the App
+
+```bash
+npx expo start
+```
+
+Open the app in:
+
 - [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
 - [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+- [Development build](https://docs.expo.dev/develop/development-builds/introduction/)
+- [Expo Go](https://expo.dev/go)
 
 ---
 
-## ☁️ AWS Backend Architecture
+## 🏗️ AWS Backend Architecture
 
 ### Services Used (All Free Tier!)
 
-- **DynamoDB** - NoSQL database for all data
-- **API Gateway** - REST API endpoints
-- **Lambda** - Serverless backend functions
-- **S3** - File storage for receipts and images
+| Service         | Purpose              | Free Tier Limits                  |
+| --------------- | -------------------- | --------------------------------- |
+| **DynamoDB**    | NoSQL database       | 25GB storage, 25 read/write units |
+| **API Gateway** | REST API endpoints   | 1M requests/month                 |
+| **Lambda**      | Serverless functions | 1M requests/month                 |
+| **S3**          | File storage         | 5GB storage, 20K GET requests     |
 
 ### Database Tables
 
-1. `users` - User accounts
-2. `inspectors` - Inspector accounts
-3. `parkingTickets` - Active tickets
-4. `fines` - Traffic fines
-5. `parkingZones` - Zone configurations
-6. `demoUsers` - Demo NIC data
-7. `vehicleOwners` - Vehicle owners
-8. `paymentReceipts` - Payment records
+| Table Name                 | Purpose                          |
+| -------------------------- | -------------------------------- |
+| `parkmate-users`           | User accounts and authentication |
+| `parkmate-parking-zones`   | Parking zone configurations      |
+| `parkmate-parking-tickets` | Active parking tickets           |
+| `parkmate-fines`           | Traffic fines and violations     |
+| `parkmate-vehicles`        | Vehicle registrations            |
+| `parkmate-receipts`        | Payment receipts                 |
+| `parkmate-nic-records`     | NIC verification records         |
 
 ---
 
-## 🎯 OCR Setup Documentation
+## 📱 App Features
 
-This app uses **Google Gemini AI** for license plate recognition - the **best free OCR service** used by most developers!
+### For Parking Inspectors
 
-- **🚀 Quick Setup (3 steps)**: [SETUP_OCR_IN_3_STEPS.md](./SETUP_OCR_IN_3_STEPS.md)
-- **📖 Complete Guide**: [COMPLETE_OCR_SETUP_GUIDE.md](./COMPLETE_OCR_SETUP_GUIDE.md)
-- **🔧 Troubleshooting**: [QUICK_OCR_TROUBLESHOOTING.md](./QUICK_OCR_TROUBLESHOOTING.md)
-- **📚 Original Guide**: [GEMINI_OCR_SETUP.md](./GEMINI_OCR_SETUP.md)
+- 📸 AI-powered license plate scanning (Google Gemini)
+- 🎫 Issue digital parking tickets
+- 💰 Record fine payments
+- 📊 View inspection history
 
-### Why Google Gemini?
+### For Parking Owners
 
-✅ **100% FREE** - No credit card required  
-✅ **High Accuracy** - AI-powered license plate detection  
-✅ **45,000 scans/month** - Generous free tier  
-✅ **Easy Setup** - Get API key in 2 minutes
+- 🗺️ Manage parking zones
+- 💵 Set parking rates
+- 📈 Track revenue
+- 📊 Generate reports
+
+### For Municipal Officers
+
+- ✅ Approve parking zones
+- 📋 Monitor violations
+- 📊 System-wide reports
+- 👥 User management
+
+### For Vehicle Owners
+
+- 📱 View active tickets
+- 💳 Pay fines online
+- 🚗 Manage vehicles
+- 📄 Download receipts
+
+### For System Admins
+
+- 👥 User management
+- 🔐 Role assignment
+- ⚙️ System configuration
+- 📊 Analytics dashboard
 
 ---
 
-## 🏗️ Project Structure
+## 🔒 Security Features
 
-```
-app/
-├── screens/
-│   ├── parkingOwner/        # Parking lot owner features
-│   ├── parkingInspector/    # Parking inspector features
-│   ├── mcOfficer/           # Municipal officer features
-│   ├── mcAdmin/             # Municipal admin features
-│   ├── fineChecker/         # Fine checker features
-│   └── systemAdmin/         # System admin features
-├── services/                # API and business logic
-│   ├── ocrService.ts        # Google Gemini OCR integration
-│   ├── firebase.ts          # Firebase configuration
-│   └── ...
-└── utils/                   # Utility functions
-```
-
----
-
-## ✨ Key Features
-
-- 📸 **AI License Plate Scanner** - Powered by Google Gemini
-- 🎫 **Digital Parking Tickets** - Issue and manage parking tickets
-- 💰 **Fine Management** - Track and process parking fines
-- 🗺️ **Zone Management** - Configure parking zones
-- 📊 **Revenue Reports** - Track parking revenue
-- 🔐 **Role-Based Access** - Multiple user roles with different permissions
+- ✅ NIC-based authentication
+- ✅ Role-based access control (RBAC)
+- ✅ Secure AWS Lambda backend
+- ✅ Encrypted data storage in DynamoDB
+- ✅ S3 secure file uploads
 
 ---
 
 ## 🛠️ Technology Stack
 
-- **Frontend**: React Native, Expo
-- **Routing**: Expo Router
-- **OCR**: Google Gemini AI (Free)
-- **Backend**: Firebase
-- **Camera**: Expo Camera
-- **Image Processing**: Expo Image Manipulator
-- **Maps**: React Native Maps
+| Layer            | Technology                |
+| ---------------- | ------------------------- |
+| **Frontend**     | React Native, Expo Router |
+| **UI Framework** | React Native              |
+| **Backend**      | AWS Lambda (Node.js)      |
+| **Database**     | AWS DynamoDB              |
+| **API**          | AWS API Gateway (REST)    |
+| **Storage**      | AWS S3                    |
+| **OCR**          | Google Gemini AI          |
+| **Camera**       | Expo Camera               |
+| **Maps**         | React Native Maps         |
 
 ---
 
-## Get a fresh project
+## 💰 Cost Estimate
 
-When you're ready, run:
+### Free Tier (First 12 months)
+
+- ✅ Up to 1000 active users
+- ✅ Up to 50,000 parking tickets/month
+- ✅ Up to 10,000 license plate scans/month
+- ✅ **Total Cost: $0/month**
+
+### After Free Tier
+
+- ~$5-10/month for 1000 users
+- Pay only for what you use
+- No monthly minimums
+
+---
+
+## 📚 Documentation
+
+- **[AWS_SETUP.md](./AWS_SETUP.md)** - Complete AWS backend setup guide
+- **[.env.example](.env.example)** - Environment configuration template
+
+---
+
+## 🚀 Deployment
+
+### Prerequisites
+
+- Node.js 18+ installed
+- AWS account with CLI configured
+- Expo CLI installed: `npm install -g expo-cli`
+
+### Deploy to AWS
+
+Follow the detailed guide in [AWS_SETUP.md](./AWS_SETUP.md)
+
+### Build for Production
+
+```bash
+# Android
+npx expo build:android
+
+# iOS
+npx expo build:ios
+```
+
+---
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+**1. "Cannot connect to AWS"**
+
+- Verify your API Gateway URL in `app.json`
+- Check if Lambda function is deployed
+- Ensure proper IAM permissions
+
+**2. "DynamoDB table not found"**
+
+- Verify all 7 tables are created
+- Check table names match exactly
+- Ensure proper region (us-east-1)
+
+**3. "OCR not working"**
+
+- Get free Gemini API key from https://aistudio.google.com/app/apikey
+- Update `EXPO_PUBLIC_GEMINI_API_KEY` in [.env.example](.env.example)
+
+**4. "Image upload failed"**
+
+- Verify S3 bucket exists
+- Check bucket CORS configuration
+- Ensure Lambda has S3 permissions
+
+---
+
+## 📞 Support
+
+For AWS setup issues:
+
+- AWS Documentation: https://docs.aws.amazon.com
+- AWS Support: https://console.aws.amazon.com/support
+
+For app development:
+
+- Expo Documentation: https://docs.expo.dev
+- React Native: https://reactnative.dev
+
+---
+
+## 📄 License
+
+This project is for educational and commercial use.
+
+---
+
+## 🎉 Ready to Deploy!
+
+Your app is configured for AWS hosting with:
+
+- ✅ DynamoDB for database
+- ✅ Lambda for serverless backend
+- ✅ API Gateway for REST API
+- ✅ S3 for file storage
+- ✅ No Firebase dependencies
+
+**Next Steps:**
+
+1. Complete AWS setup: [AWS_SETUP.md](./AWS_SETUP.md)
+2. Update `app.json` with your API endpoint
+3. Run `npx expo start`
+4. Deploy to production!
 
 ```bash
 npm run reset-project

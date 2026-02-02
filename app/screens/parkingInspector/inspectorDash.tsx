@@ -29,12 +29,12 @@ const InspectorDash = () => {
   );
   const [employeeId, setEmployeeId] = useState(params.employeeId as string);
 
-  // Update Firebase when status changes
+  // Update AWS DynamoDB when status changes
   useEffect(() => {
-    updateStatusInFirebase();
+    updateStatusInDynamoDB();
   }, [isOnline]);
 
-  const updateStatusInFirebase = async () => {
+  const updateStatusInDynamoDB = async () => {
     try {
       const status = isOnline ? "online" : "offline";
       console.log(`📡 Updating inspector status to ${status}...`);

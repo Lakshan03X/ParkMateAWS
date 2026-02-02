@@ -20,18 +20,21 @@ Use this checklist to ensure you've completed all steps for AWS deployment.
 Create these 8 tables in DynamoDB:
 
 ### Table 1: users
+
 - [ ] Table name: `users`
 - [ ] Partition key: `nicNumber` (String)
 - [ ] Capacity: On-demand
 - [ ] Status: Active
 
-### Table 2: inspectors  
+### Table 2: inspectors
+
 - [ ] Table name: `inspectors`
 - [ ] Partition key: `inspectorId` (String)
 - [ ] Capacity: On-demand
 - [ ] Status: Active
 
 ### Table 3: parkingTickets
+
 - [ ] Table name: `parkingTickets`
 - [ ] Partition key: `ticketId` (String)
 - [ ] GSI: `vehicleNumber-index` with key `vehicleNumber`
@@ -39,6 +42,7 @@ Create these 8 tables in DynamoDB:
 - [ ] Status: Active
 
 ### Table 4: fines
+
 - [ ] Table name: `fines`
 - [ ] Partition key: `id` (String)
 - [ ] GSI: `vehicleNumber-index` with key `vehicleNumber`
@@ -46,24 +50,28 @@ Create these 8 tables in DynamoDB:
 - [ ] Status: Active
 
 ### Table 5: parkingZones
+
 - [ ] Table name: `parkingZones`
 - [ ] Partition key: `zoneCode` (String)
 - [ ] Capacity: On-demand
 - [ ] Status: Active
 
 ### Table 6: demoUsers
+
 - [ ] Table name: `demoUsers`
 - [ ] Partition key: `nicNumber` (String)
 - [ ] Capacity: On-demand
 - [ ] Status: Active
 
 ### Table 7: vehicleOwners
+
 - [ ] Table name: `vehicleOwners`
 - [ ] Partition key: `vehicleNumber` (String)
 - [ ] Capacity: On-demand
 - [ ] Status: Active
 
 ### Table 8: paymentReceipts
+
 - [ ] Table name: `paymentReceipts`
 - [ ] Partition key: `id` (String)
 - [ ] Capacity: On-demand
@@ -83,6 +91,7 @@ Create these 8 tables in DynamoDB:
 - [ ] Test with sample event
 
 ### Add Permissions
+
 - [ ] Go to IAM > Roles
 - [ ] Find Lambda execution role
 - [ ] Attach policy: `AmazonDynamoDBFullAccess`
@@ -93,12 +102,14 @@ Create these 8 tables in DynamoDB:
 ## Phase 4: API Gateway Setup ✅
 
 ### Create API
+
 - [ ] Go to API Gateway console
 - [ ] Create new REST API
 - [ ] API name: `parking-system-api`
 - [ ] Endpoint type: Regional
 
 ### Create Resources
+
 - [ ] Create resource: `/query` (POST)
 - [ ] Create resource: `/get-item` (POST)
 - [ ] Create resource: `/put-item` (POST)
@@ -108,19 +119,23 @@ Create these 8 tables in DynamoDB:
 - [ ] Create resource: `/health` (GET)
 
 ### Configure Methods
+
 For each resource:
+
 - [ ] Integration type: Lambda Function
 - [ ] Select `parking-system-api` function
 - [ ] Enable Lambda Proxy integration
 - [ ] Grant API Gateway permission to invoke Lambda
 
 ### Enable CORS
+
 - [ ] Select each resource
 - [ ] Actions > Enable CORS
 - [ ] Keep default settings
 - [ ] Click "Enable CORS"
 
 ### Deploy API
+
 - [ ] Actions > Deploy API
 - [ ] Deployment stage: `prod`
 - [ ] Click "Deploy"
@@ -139,6 +154,7 @@ For each resource:
 - [ ] Create bucket
 
 ### Configure CORS
+
 - [ ] Go to bucket > Permissions > CORS
 - [ ] Add CORS configuration (see AWS_DEPLOYMENT_GUIDE.md)
 - [ ] Save changes
@@ -148,6 +164,7 @@ For each resource:
 ## Phase 6: App Configuration ✅
 
 ### Update app.json
+
 - [ ] Open `app.json`
 - [ ] Find `extra` section
 - [ ] Update `AWS_REGION` to `us-east-1`
@@ -156,6 +173,7 @@ For each resource:
 - [ ] Save file
 
 Example:
+
 ```json
 {
   "extra": {
@@ -192,6 +210,7 @@ Example:
 ## Phase 9: Testing ✅
 
 ### Test Inspector Login
+
 - [ ] Open app
 - [ ] Navigate to Inspector Login
 - [ ] Try Employee ID: `INS001`
@@ -199,6 +218,7 @@ Example:
 - [ ] Verify login works
 
 ### Test Parking Ticket
+
 - [ ] Create new parking ticket
 - [ ] Enter vehicle number
 - [ ] Select parking zone
@@ -207,11 +227,13 @@ Example:
 - [ ] Check DynamoDB `parkingTickets` table
 
 ### Test Fine Checker
+
 - [ ] Enter vehicle number
 - [ ] Check for fines
 - [ ] Verify fine search works
 
 ### Test Payment
+
 - [ ] Select a ticket
 - [ ] Initiate payment
 - [ ] Complete payment flow
@@ -222,12 +244,14 @@ Example:
 ## Phase 10: Monitoring Setup ✅
 
 ### CloudWatch
+
 - [ ] Go to CloudWatch console
 - [ ] Check Lambda function logs
 - [ ] Verify API Gateway logs
 - [ ] Set up alarms (optional)
 
 ### DynamoDB Metrics
+
 - [ ] Go to DynamoDB console
 - [ ] Select each table
 - [ ] Check Metrics tab
@@ -238,6 +262,7 @@ Example:
 ## Phase 11: Service Files Update ✅
 
 ### Already Updated
+
 - ✅ `awsConfig.ts` - AWS configuration
 - ✅ `awsDynamoService.ts` - DynamoDB service
 - ✅ `awsDemoService.ts` - Demo service
@@ -245,6 +270,7 @@ Example:
 - ✅ `inspectorService.ts` - Inspector service
 
 ### Need Manual Update
+
 - [ ] `fineCheckerService.ts`
 - [ ] `vehicleOwnerService.ts`
 - [ ] `parkingZoneService.ts`
@@ -258,6 +284,7 @@ Example:
 ## Phase 12: Production Readiness ✅
 
 ### Security
+
 - [ ] Enable API Gateway API keys
 - [ ] Set up usage plans
 - [ ] Configure rate limiting
@@ -265,11 +292,13 @@ Example:
 - [ ] Review IAM permissions
 
 ### Performance
+
 - [ ] Enable DynamoDB auto-scaling (optional)
 - [ ] Set up CloudFront for S3 (optional)
 - [ ] Configure Lambda reserved concurrency (optional)
 
 ### Backup
+
 - [ ] Enable DynamoDB point-in-time recovery
 - [ ] Set up S3 versioning
 - [ ] Configure automated backups
@@ -322,7 +351,7 @@ Once all items are checked:
 ✅ All Firebase dependencies removed  
 ✅ Running on 100% free tier  
 ✅ Production ready  
-✅ Scalable architecture  
+✅ Scalable architecture
 
 ---
 
@@ -363,4 +392,4 @@ Track these metrics:
 
 **Congratulations! Your parking system is now running on AWS! 🚀**
 
-*Last updated: ${new Date().toLocaleDateString()}*
+_Last updated: ${new Date().toLocaleDateString()}_

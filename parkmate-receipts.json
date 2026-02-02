@@ -1,0 +1,13 @@
+{
+  "TableName": "parkmate-receipts",
+  "AttributeDefinitions": [
+    { "AttributeName": "receiptId", "AttributeType": "S" }
+  ],
+  "KeySchema": [
+    { "AttributeName": "receiptId", "KeyType": "HASH" }
+  ],
+  "ProvisionedThroughput": {
+    "ReadCapacityUnits": 5,
+    "WriteCapacityUnits": 5
+  }
+}

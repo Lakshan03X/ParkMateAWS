@@ -19,7 +19,7 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import firebaseDemoService from "../../services/firebaseDemoService";
+import awsDemoService from "../../services/awsDemoService";
 
 const RegisterNUM = () => {
   const router = useRouter();
@@ -83,7 +83,7 @@ const RegisterNUM = () => {
 
     try {
       // Request OTP
-      const otpResult = await firebaseDemoService.requestOTP(
+      const otpResult = await awsDemoService.requestOTP(
         "", // No NIC for mobile registration
         mobileNumber.trim()
       );

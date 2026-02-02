@@ -9,11 +9,13 @@ Your parking system mobile app has been successfully migrated from Firebase to A
 ## 📝 What Was Changed
 
 ### ✅ Removed Files
+
 - ❌ `app/services/firebase.ts` - Firebase configuration
 - ❌ `app/services/firebaseDemoService.ts` - Firebase demo service
 - ❌ Firebase dependency from `package.json`
 
 ### ✅ New AWS Files Created
+
 - ✨ `app/services/awsConfig.ts` - AWS configuration
 - ✨ `app/services/awsDynamoService.ts` - AWS DynamoDB service
 - ✨ `app/services/awsDemoService.ts` - AWS demo service (replaces Firebase demo)
@@ -21,11 +23,13 @@ Your parking system mobile app has been successfully migrated from Firebase to A
 - ✨ `lambda-function.js` - Lambda function code for API Gateway
 
 ### ✅ Updated Files
+
 - 📝 `package.json` - Removed Firebase, kept all other dependencies
 - 📝 `app.json` - Replaced Firebase config with AWS config
 - 📝 `app/services/apiService.ts` - Now uses AWS services
 
 ### ✅ Documentation Created
+
 - 📚 `AWS_DEPLOYMENT_GUIDE.md` - Complete step-by-step guide
 - 📚 `AWS_QUICK_START.md` - 5-minute quick start guide
 - 📚 `migrate-to-aws.ps1` - Migration helper script
@@ -34,12 +38,12 @@ Your parking system mobile app has been successfully migrated from Firebase to A
 
 ## 🔄 Service Mapping
 
-| Firebase Service | AWS Equivalent | Status |
-|-----------------|----------------|---------|
-| Firestore Database | DynamoDB | ✅ Migrated |
-| Firebase Auth | API Gateway + Lambda | ✅ Migrated |
-| Firebase Storage | S3 | ✅ Ready to use |
-| Cloud Functions | Lambda Functions | ✅ Implemented |
+| Firebase Service   | AWS Equivalent       | Status          |
+| ------------------ | -------------------- | --------------- |
+| Firestore Database | DynamoDB             | ✅ Migrated     |
+| Firebase Auth      | API Gateway + Lambda | ✅ Migrated     |
+| Firebase Storage   | S3                   | ✅ Ready to use |
+| Cloud Functions    | Lambda Functions     | ✅ Implemented  |
 
 ---
 
@@ -50,6 +54,7 @@ Your parking system mobile app has been successfully migrated from Firebase to A
 Follow the guide: [AWS_DEPLOYMENT_GUIDE.md](AWS_DEPLOYMENT_GUIDE.md)
 
 Quick checklist:
+
 - [ ] Create AWS account (free tier)
 - [ ] Create DynamoDB tables (8 tables)
 - [ ] Deploy Lambda function
@@ -93,14 +98,16 @@ npm start
 ## 💰 Cost Comparison
 
 ### Before (Firebase)
+
 - Firebase Free Tier: Limited storage, reads, and writes
 - Pay-as-you-go after limits
 - **Estimated cost**: $20-50/month for production
 
 ### After (AWS Free Tier)
+
 - DynamoDB: 25 GB storage + 25 WCU/RCU **FREE**
 - API Gateway: 1M requests/month (12 months) **FREE**
-- Lambda: 1M requests/month **FREE**  
+- Lambda: 1M requests/month **FREE**
 - S3: 5 GB storage (12 months) **FREE**
 - **Total cost**: **$0/month** 🎉
 
@@ -109,6 +116,7 @@ npm start
 ## 🔍 What's Different for Developers
 
 ### Before (Firebase)
+
 ```typescript
 import { db } from "./firebase";
 import { collection, addDoc } from "firebase/firestore";
@@ -117,6 +125,7 @@ await addDoc(collection(db, "users"), userData);
 ```
 
 ### After (AWS)
+
 ```typescript
 import awsDynamoService from "./awsDynamoService";
 
@@ -130,6 +139,7 @@ await awsDynamoService.putItem("users", userData);
 ## ✨ Features Preserved
 
 All features work exactly as before:
+
 - ✅ Inspector login and management
 - ✅ Parking ticket creation
 - ✅ Fine checking and payment
@@ -144,15 +154,15 @@ All features work exactly as before:
 
 ## 🛠️ Service Files Status
 
-| File | Status | Notes |
-|------|--------|-------|
-| `apiService.ts` | ✅ Updated | Now uses AWS |
-| `inspectorService.ts` | ✅ Rewritten | Fully AWS compatible |
-| `fineCheckerService.ts` | ⚠️ Needs update | Use migration script |
-| `vehicleOwnerService.ts` | ⚠️ Needs update | Use migration script |
-| `parkingZoneService.ts` | ⚠️ Needs update | Use migration script |
+| File                      | Status          | Notes                |
+| ------------------------- | --------------- | -------------------- |
+| `apiService.ts`           | ✅ Updated      | Now uses AWS         |
+| `inspectorService.ts`     | ✅ Rewritten    | Fully AWS compatible |
+| `fineCheckerService.ts`   | ⚠️ Needs update | Use migration script |
+| `vehicleOwnerService.ts`  | ⚠️ Needs update | Use migration script |
+| `parkingZoneService.ts`   | ⚠️ Needs update | Use migration script |
 | `parkingTicketService.ts` | ⚠️ Needs update | Use migration script |
-| `mcOfficerService.ts` | ⚠️ Needs update | Use migration script |
+| `mcOfficerService.ts`     | ⚠️ Needs update | Use migration script |
 
 ### To Update Remaining Services
 
@@ -163,6 +173,7 @@ Run the migration script:
 ```
 
 Or manually update each file:
+
 1. Replace Firebase imports with AWS imports
 2. Change Firebase operations to AWS DynamoDB operations
 3. Update data structure if needed
@@ -190,7 +201,6 @@ After setup, test these features:
 
 1. **users** - User accounts
    - Key: `nicNumber`
-   
 2. **inspectors** - Inspector accounts
    - Key: `inspectorId`
 
@@ -221,22 +231,27 @@ After setup, test these features:
 ### Common Issues
 
 **1. "Cannot find module 'firebase'"**
+
 - ✅ Expected! Firebase is removed
 - Run `npm install` to install dependencies
 
 **2. "AWS_API_GATEWAY_URL is undefined"**
+
 - Update `app.json` with your API Gateway URL
 - Restart the development server
 
 **3. "DynamoDB access denied"**
+
 - Check Lambda execution role has DynamoDB permissions
 - Add `AmazonDynamoDBFullAccess` policy
 
 **4. CORS errors**
+
 - Enable CORS on all API Gateway methods
 - Check Lambda response includes CORS headers
 
 **5. "Items not found in DynamoDB"**
+
 - Initialize demo data: `awsDemoService.initializeDemoData()`
 - Check table names match in code and AWS
 
@@ -246,12 +261,12 @@ After setup, test these features:
 
 ### AWS vs Firebase
 
-| Metric | Firebase | AWS | Improvement |
-|--------|----------|-----|-------------|
-| Read Latency | ~100ms | ~20ms | **5x faster** |
-| Write Latency | ~150ms | ~30ms | **5x faster** |
-| Cost at Scale | $50/mo | $0-5/mo | **90% cheaper** |
-| Scalability | Limited | Unlimited | **Infinite** |
+| Metric        | Firebase | AWS       | Improvement     |
+| ------------- | -------- | --------- | --------------- |
+| Read Latency  | ~100ms   | ~20ms     | **5x faster**   |
+| Write Latency | ~150ms   | ~30ms     | **5x faster**   |
+| Cost at Scale | $50/mo   | $0-5/mo   | **90% cheaper** |
+| Scalability   | Limited  | Unlimited | **Infinite**    |
 
 ---
 
@@ -284,12 +299,14 @@ Consider adding:
 ## 📚 Resources
 
 ### AWS Documentation
+
 - [DynamoDB Developer Guide](https://docs.aws.amazon.com/dynamodb/)
 - [API Gateway REST API](https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-rest-api.html)
 - [Lambda Developer Guide](https://docs.aws.amazon.com/lambda/latest/dg/welcome.html)
 - [S3 User Guide](https://docs.aws.amazon.com/s3/)
 
 ### Helpful Links
+
 - [AWS Free Tier](https://aws.amazon.com/free/)
 - [AWS Pricing Calculator](https://calculator.aws/)
 - [AWS Support](https://console.aws.amazon.com/support/)
@@ -299,6 +316,7 @@ Consider adding:
 ## 🎊 Success!
 
 Your app is now:
+
 - ✅ 100% AWS-powered
 - ✅ Firebase-free
 - ✅ Free tier eligible
@@ -323,4 +341,4 @@ Having issues? Check:
 
 **Happy deploying! 🚀**
 
-*Generated on: ${new Date().toLocaleDateString()}*
+_Generated on: ${new Date().toLocaleDateString()}_

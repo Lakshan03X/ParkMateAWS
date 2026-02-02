@@ -109,11 +109,11 @@ const InspectorProfile = () => {
         setIsUploadingImage(true);
         const imageUri = result.assets[0].uri;
         
-        // In a production app, you would upload this to Firebase Storage
+        // In a production app, you would upload this to AWS S3
         // For now, we'll just use the local URI
         setProfilePictureUrl(imageUri);
         
-        // Update immediately in Firebase
+        // Update immediately in AWS DynamoDB
         await inspectorService.updateInspector(params.inspectorId as string, {
           profilePictureUrl: imageUri,
         });
@@ -143,7 +143,7 @@ const InspectorProfile = () => {
     try {
       setIsSaving(true);
 
-      // Update inspector details in Firebase
+      // Update inspector details in AWS DynamoDB
       await inspectorService.updateInspector(params.inspectorId as string, {
         name: name.trim(),
         email: email.trim(),
@@ -203,7 +203,13 @@ const InspectorProfile = () => {
         {/* Back Button */}
         <TouchableOpacity
           style={[styles.backButton, { top: insets.top + 10 }]}
-          onPress={() => router.back()}
+          onPress={() => {
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.replace("/screens/parkingInspector/inspectorDash");
+            }
+          }}
           activeOpacity={0.7}
         >
           <Ionicons name="arrow-back" size={24} color="#FFFFFF" />

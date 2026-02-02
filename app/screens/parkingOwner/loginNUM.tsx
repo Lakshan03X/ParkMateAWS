@@ -19,9 +19,8 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { collection, query, where, getDocs } from "firebase/firestore";
-import { db } from "../../services/firebase";
-import firebaseDemoService from "../../services/firebaseDemoService";
+import awsDynamoService from "../../services/awsDynamoService";
+import awsDemoService from "../../services/awsDemoService";
 
 const LoginNUM = () => {
   const router = useRouter();
@@ -53,11 +52,13 @@ const LoginNUM = () => {
 
     try {
       // Check if mobile number is registered in the system
-      const usersRef = collection(db, "users");
-      const q = query(usersRef, where("mobileNumber", "==", mobileNumber));
-      const querySnapshot = await getDocs(q);
+      // Check if mobile number is registered in the system
+      // Scan users table and filter by mobile number
+      const result = await awsDynamoService.scan("users");
+      const users = result.items || [];
+      const user = users.find((u: any) => u.mobileNumber === mobileNumber);
 
-      if (querySnapshot.empty) {
+      if (!user) {
         Alert.alert(
           "Mobile Number Not Registered",
           "This mobile number is not registered in our system. Please sign up first.",
@@ -73,8 +74,8 @@ const LoginNUM = () => {
         return;
       }
 
-      const userDoc = querySnapshot.docs[0];
-      const userData = userDoc.data();
+      const userData = user;
+      const userId = user.id || user.userId || user.docId; // Assuming id might be in different fields
 
       // Show confirmation
       Alert.alert(
@@ -91,7 +92,7 @@ const LoginNUM = () => {
             onPress: async () => {
               try {
                 // Request OTP
-                const otpResult = await firebaseDemoService.requestOTP(
+                const otpResult = await awsDemoService.requestOTP(
                   userData.nicNumber || "",
                   mobileNumber
                 );
@@ -103,7 +104,7 @@ const LoginNUM = () => {
                     params: {
                       transactionId: otpResult.transactionId,
                       nicNumber: userData.nicNumber || "",
-                      userId: userDoc.id,
+                      userId: userId,
                       fullName: userData.fullName,
                       mobileNumber: mobileNumber,
                       maskedNumber: mobileNumber,
@@ -177,8 +178,8 @@ const LoginNUM = () => {
                 style={[
                   styles.input,
                   mobileError &&
-                    mobileNumber.length === 10 &&
-                    styles.inputError,
+                  mobileNumber.length === 10 &&
+                  styles.inputError,
                 ]}
                 placeholder="07XXXXXXXX"
                 placeholderTextColor="#999"
@@ -210,7 +211,7 @@ const LoginNUM = () => {
               style={[
                 styles.sendOtpButton,
                 (isChecking || mobileNumber.length !== 10 || mobileError) &&
-                  styles.sendOtpButtonDisabled,
+                styles.sendOtpButtonDisabled,
               ]}
               onPress={handleSendOTP}
               activeOpacity={0.8}

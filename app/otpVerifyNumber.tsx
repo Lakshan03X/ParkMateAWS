@@ -18,7 +18,7 @@ import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
-import firebaseDemoService from "./services/firebaseDemoService";
+import awsDemoService from "./services/awsDemoService";
 
 const OtpVerifyNumber = () => {
   const router = useRouter();
@@ -115,7 +115,7 @@ const OtpVerifyNumber = () => {
 
     try {
       // Verify OTP with the transaction ID
-      const result = await firebaseDemoService.verifyOTP(
+      const result = await awsDemoService.verifyOTP(
         params.transactionId as string,
         enteredOtp
       );
@@ -159,7 +159,7 @@ const OtpVerifyNumber = () => {
   const handleResendOtp = async () => {
     console.log("Resending OTP...");
     try {
-      const result = await firebaseDemoService.requestOTP(
+      const result = await awsDemoService.requestOTP(
         "", // No NIC for mobile registration
         params.mobileNumber as string
       );
@@ -188,7 +188,13 @@ const OtpVerifyNumber = () => {
         {/* Back Button */}
         <TouchableOpacity
           style={[styles.backButton, { top: insets.top + 10 }]}
-          onPress={() => router.back()}
+          onPress={() => {
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.replace("/loginSelection");
+            }
+          }}
           activeOpacity={0.7}
         >
           <Ionicons name="arrow-back" size={24} color="#FFFFFF" />

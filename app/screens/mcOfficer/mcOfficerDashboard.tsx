@@ -90,7 +90,7 @@ const MCOfficerDashboard = () => {
       setIsLoading(true);
       const data = await inspectorService.getAllInspectors();
 
-      console.log("📋 Total inspectors from Firebase:", data.length);
+      console.log("📋 Total inspectors from AWS DynamoDB:", data.length);
       console.log("📋 Selected Council:", params.selectedCouncil);
       console.log(
         "📋 All Inspector details:",

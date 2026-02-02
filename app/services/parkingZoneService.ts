@@ -1,17 +1,4 @@
-import {
-  addDoc,
-  collection,
-  deleteDoc,
-  doc,
-  getDoc,
-  getDocs,
-  orderBy,
-  query,
-  Timestamp,
-  updateDoc,
-  where,
-} from "firebase/firestore";
-import { db } from "./firebase";
+import awsDynamoService from "./awsDynamoService";
 
 export interface ParkingZone {
   id: string;
@@ -38,28 +25,30 @@ class ParkingZoneService {
    */
   async getAllParkingZones(): Promise<ParkingZone[]> {
     try {
-      const zonesRef = collection(db, COLLECTION_NAME);
-      const q = query(zonesRef, orderBy("createdAt", "desc"));
-      const querySnapshot = await getDocs(q);
+      const result = await awsDynamoService.scan(COLLECTION_NAME);
 
-      const zones: ParkingZone[] = [];
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        zones.push({
-          id: doc.id,
-          municipalCouncil: data.municipalCouncil,
-          zoneCode: data.zoneCode,
-          location: data.location,
-          latitude: data.latitude,
-          longitude: data.longitude,
-          parkingRate: data.parkingRate,
-          activeHours: data.activeHours,
-          totalParkingSpots: data.totalParkingSpots,
-          status: data.status || "active",
-          inactiveReason: data.inactiveReason,
-          createdAt: data.createdAt,
-          updatedAt: data.updatedAt,
-        });
+      const zones: ParkingZone[] = (result.items || []).map((data: any) => ({
+        id: data.id,
+        municipalCouncil: data.municipalCouncil,
+        zoneCode: data.zoneCode,
+        location: data.location,
+        latitude: data.latitude,
+        longitude: data.longitude,
+        parkingRate: data.parkingRate,
+        activeHours: data.activeHours,
+        totalParkingSpots: data.totalParkingSpots,
+        status: data.status || "active",
+        inactiveReason: data.inactiveReason,
+        createdAt: data.createdAt,
+        updatedAt: data.updatedAt,
+      }));
+
+      // Sort by createdAt desc
+      zones.sort((a, b) => {
+        if (!a.createdAt || !b.createdAt) return 0;
+        const timeA = new Date(a.createdAt).getTime();
+        const timeB = new Date(b.createdAt).getTime();
+        return timeB - timeA;
       });
 
       return zones;
@@ -74,13 +63,12 @@ class ParkingZoneService {
    */
   async getParkingZoneById(zoneId: string): Promise<ParkingZone | null> {
     try {
-      const zoneRef = doc(db, COLLECTION_NAME, zoneId);
-      const zoneSnap = await getDoc(zoneRef);
+      const result = await awsDynamoService.getItem(COLLECTION_NAME, { id: zoneId });
 
-      if (zoneSnap.exists()) {
-        const data = zoneSnap.data();
+      if (result.item) {
+        const data = result.item;
         return {
-          id: zoneSnap.id,
+          id: data.id,
           municipalCouncil: data.municipalCouncil,
           zoneCode: data.zoneCode,
           location: data.location,
@@ -110,19 +98,19 @@ class ParkingZoneService {
     zoneData: Omit<ParkingZone, "id">
   ): Promise<ParkingZone> {
     try {
+      const id = `ZONE_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+
       const newZone = {
+        id,
         ...zoneData,
         status: zoneData.status || "active",
-        createdAt: Timestamp.now(),
-        updatedAt: Timestamp.now(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       };
 
-      const docRef = await addDoc(collection(db, COLLECTION_NAME), newZone);
+      await awsDynamoService.putItem(COLLECTION_NAME, newZone);
 
-      return {
-        id: docRef.id,
-        ...zoneData,
-      };
+      return newZone;
     } catch (error) {
       console.error("Error adding parking zone:", error);
       throw new Error("Failed to add parking zone");
@@ -137,11 +125,14 @@ class ParkingZoneService {
     updates: Partial<ParkingZone>
   ): Promise<void> {
     try {
-      const zoneRef = doc(db, COLLECTION_NAME, zoneId);
-      await updateDoc(zoneRef, {
-        ...updates,
-        updatedAt: Timestamp.now(),
-      });
+      await awsDynamoService.updateItem(
+        COLLECTION_NAME,
+        { id: zoneId },
+        {
+          ...updates,
+          updatedAt: new Date().toISOString(),
+        }
+      );
     } catch (error) {
       console.error("Error updating parking zone:", error);
       throw new Error("Failed to update parking zone");
@@ -153,8 +144,7 @@ class ParkingZoneService {
    */
   async deleteParkingZone(zoneId: string): Promise<void> {
     try {
-      const zoneRef = doc(db, COLLECTION_NAME, zoneId);
-      await deleteDoc(zoneRef);
+      await awsDynamoService.deleteItem(COLLECTION_NAME, { id: zoneId });
     } catch (error) {
       console.error("Error deleting parking zone:", error);
       throw new Error("Failed to delete parking zone");
@@ -170,10 +160,9 @@ class ParkingZoneService {
     inactiveReason?: string
   ): Promise<void> {
     try {
-      const zoneRef = doc(db, COLLECTION_NAME, zoneId);
       const updateData: any = {
         status: status,
-        updatedAt: Timestamp.now(),
+        updatedAt: new Date().toISOString(),
       };
 
       if (status === "inactive" && inactiveReason) {
@@ -182,7 +171,7 @@ class ParkingZoneService {
         updateData.inactiveReason = "";
       }
 
-      await updateDoc(zoneRef, updateData);
+      await awsDynamoService.updateItem(COLLECTION_NAME, { id: zoneId }, updateData);
     } catch (error) {
       console.error("Error updating zone status:", error);
       throw new Error("Failed to update zone status");
@@ -196,35 +185,36 @@ class ParkingZoneService {
     status: "active" | "inactive"
   ): Promise<ParkingZone[]> {
     try {
-      const zonesRef = collection(db, COLLECTION_NAME);
-      // Fetch all zones without orderBy to avoid composite index requirement
-      const q = query(zonesRef, where("status", "==", status));
-      const querySnapshot = await getDocs(q);
+      const result = await awsDynamoService.scan(COLLECTION_NAME);
+      const allZones = result.items || [];
 
       const zones: ParkingZone[] = [];
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        zones.push({
-          id: doc.id,
-          municipalCouncil: data.municipalCouncil,
-          zoneCode: data.zoneCode,
-          location: data.location,
-          latitude: data.latitude,
-          longitude: data.longitude,
-          parkingRate: data.parkingRate,
-          activeHours: data.activeHours,
-          totalParkingSpots: data.totalParkingSpots,
-          status: data.status,
-          inactiveReason: data.inactiveReason,
-          createdAt: data.createdAt,
-          updatedAt: data.updatedAt,
-        });
+      allZones.forEach((data: any) => {
+        if (data.status === status) {
+          zones.push({
+            id: data.id,
+            municipalCouncil: data.municipalCouncil,
+            zoneCode: data.zoneCode,
+            location: data.location,
+            latitude: data.latitude,
+            longitude: data.longitude,
+            parkingRate: data.parkingRate,
+            activeHours: data.activeHours,
+            totalParkingSpots: data.totalParkingSpots,
+            status: data.status,
+            inactiveReason: data.inactiveReason,
+            createdAt: data.createdAt,
+            updatedAt: data.updatedAt,
+          });
+        }
       });
 
       // Sort by createdAt locally
       zones.sort((a, b) => {
         if (!a.createdAt || !b.createdAt) return 0;
-        return b.createdAt.seconds - a.createdAt.seconds;
+        const timeA = new Date(a.createdAt).getTime();
+        const timeB = new Date(b.createdAt).getTime();
+        return timeB - timeA;
       });
 
       return zones;
@@ -239,14 +229,13 @@ class ParkingZoneService {
    */
   async searchParkingZones(searchTerm: string): Promise<ParkingZone[]> {
     try {
-      const zonesRef = collection(db, COLLECTION_NAME);
-      const querySnapshot = await getDocs(zonesRef);
+      const result = await awsDynamoService.scan(COLLECTION_NAME);
+      const allZones = result.items || [];
 
       const zones: ParkingZone[] = [];
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
+      allZones.forEach((data: any) => {
         const zone = {
-          id: doc.id,
+          id: data.id,
           municipalCouncil: data.municipalCouncil,
           zoneCode: data.zoneCode,
           location: data.location,
@@ -294,32 +283,28 @@ class ParkingZoneService {
     municipalCouncil: string
   ): Promise<ParkingZone[]> {
     try {
-      const zonesRef = collection(db, COLLECTION_NAME);
-      const q = query(
-        zonesRef,
-        where("municipalCouncil", "==", municipalCouncil),
-        orderBy("createdAt", "desc")
-      );
-      const querySnapshot = await getDocs(q);
+      const result = await awsDynamoService.scan(COLLECTION_NAME);
+      const allZones = result.items || [];
 
       const zones: ParkingZone[] = [];
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        zones.push({
-          id: doc.id,
-          municipalCouncil: data.municipalCouncil,
-          zoneCode: data.zoneCode,
-          location: data.location,
-          latitude: data.latitude,
-          longitude: data.longitude,
-          parkingRate: data.parkingRate,
-          activeHours: data.activeHours,
-          totalParkingSpots: data.totalParkingSpots,
-          status: data.status || "active",
-          inactiveReason: data.inactiveReason,
-          createdAt: data.createdAt,
-          updatedAt: data.updatedAt,
-        });
+      allZones.forEach((data: any) => {
+        if (data.municipalCouncil === municipalCouncil) {
+          zones.push({
+            id: data.id,
+            municipalCouncil: data.municipalCouncil,
+            zoneCode: data.zoneCode,
+            location: data.location,
+            latitude: data.latitude,
+            longitude: data.longitude,
+            parkingRate: data.parkingRate,
+            activeHours: data.activeHours,
+            totalParkingSpots: data.totalParkingSpots,
+            status: data.status || "active",
+            inactiveReason: data.inactiveReason,
+            createdAt: data.createdAt,
+            updatedAt: data.updatedAt,
+          });
+        }
       });
 
       return zones;

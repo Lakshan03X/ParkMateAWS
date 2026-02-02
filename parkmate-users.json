@@ -1,0 +1,23 @@
+{
+  "TableName": "parkmate-users",
+  "AttributeDefinitions": [
+    { "AttributeName": "userId", "AttributeType": "S" },
+    { "AttributeName": "nicNumber", "AttributeType": "S" }
+  ],
+  "KeySchema": [{ "AttributeName": "userId", "KeyType": "HASH" }],
+  "GlobalSecondaryIndexes": [
+    {
+      "IndexName": "nicNumber-index",
+      "KeySchema": [{ "AttributeName": "nicNumber", "KeyType": "HASH" }],
+      "Projection": { "ProjectionType": "ALL" },
+      "ProvisionedThroughput": {
+        "ReadCapacityUnits": 5,
+        "WriteCapacityUnits": 5
+      }
+    }
+  ],
+  "ProvisionedThroughput": {
+    "ReadCapacityUnits": 5,
+    "WriteCapacityUnits": 5
+  }
+}

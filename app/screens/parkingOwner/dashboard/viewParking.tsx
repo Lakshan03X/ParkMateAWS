@@ -150,7 +150,7 @@ const ViewParking = () => {
         console.log("⚠️ No valid zones found. Check:");
         console.log("1. Are zones marked as 'active'?");
         console.log("2. Do zones have latitude and longitude?");
-        console.log("3. Firebase data:", zones);
+        console.log("3. DynamoDB data:", zones);
       }
     } catch (error: any) {
       console.error("❌ Error loading parking zones:", error);

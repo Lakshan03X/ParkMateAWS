@@ -15,8 +15,7 @@ import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
-import { collection, addDoc, Timestamp } from "firebase/firestore";
-import { db } from "../../services/firebase";
+import awsDynamoService from "../../services/awsDynamoService";
 
 const KycConsentMobile = () => {
   const router = useRouter();
@@ -37,8 +36,11 @@ const KycConsentMobile = () => {
         role: params.role,
       });
 
-      // Save user to Firebase database (without NIC data)
+      // Save user to DynamoDB (without NIC data)
+      const userId = `USER_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+
       const userData = {
+        userId,
         fullName: params.fullName as string,
         mobileNumber: params.mobileNumber as string,
         email: (params.email as string) || "",
@@ -48,12 +50,12 @@ const KycConsentMobile = () => {
         address: null,
         verified: true,
         profileComplete: false, // Flag to show warning icon
-        createdAt: Timestamp.now(),
-        updatedAt: Timestamp.now(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       };
 
-      const docRef = await addDoc(collection(db, "users"), userData);
-      console.log("✅ User saved to database with ID:", docRef.id);
+      await awsDynamoService.putItem("users", userData);
+      console.log("✅ User saved to database with ID:", userId);
 
       // Show success animation
       setShowSuccess(true);
@@ -64,7 +66,7 @@ const KycConsentMobile = () => {
         router.replace({
           pathname: "/screens/parkingOwner/ownerDashboard",
           params: {
-            userId: docRef.id,
+            userId: userId,
             fullName: params.fullName,
             mobileNumber: params.mobileNumber,
             profileComplete: "false", // Pass as string for navigation

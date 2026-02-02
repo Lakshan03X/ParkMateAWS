@@ -108,7 +108,7 @@ const MCOfficerManage = () => {
     "Kesbewa",
   ];
 
-  // Load officers and inspectors from Firebase
+  // Load officers and inspectors from AWS DynamoDB
   useEffect(() => {
     loadData();
   }, []);

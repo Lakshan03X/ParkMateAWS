@@ -20,7 +20,7 @@ import {
 } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import apiService from "../../services/apiService";
-import firebaseDemoService from "../../services/firebaseDemoService";
+import awsDemoService from "../../services/awsDemoService";
 
 const LoginNIC = () => {
   const router = useRouter();
@@ -104,7 +104,7 @@ const LoginNIC = () => {
             onPress: async () => {
               try {
                 // Request OTP
-                const otpResult = await firebaseDemoService.requestOTP(
+                const otpResult = await awsDemoService.requestOTP(
                   nicNumber,
                   user.mobileNumber
                 );
@@ -221,7 +221,7 @@ const LoginNIC = () => {
               style={[
                 styles.sendOtpButton,
                 (isChecking || nicNumber.length !== 12 || nicError) &&
-                  styles.sendOtpButtonDisabled,
+                styles.sendOtpButtonDisabled,
               ]}
               onPress={handleSendOTP}
               activeOpacity={0.8}

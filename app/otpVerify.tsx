@@ -18,7 +18,7 @@ import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
-import firebaseDemoService from "./services/firebaseDemoService";
+import awsDemoService from "./services/awsDemoService";
 
 const OtpVerify = () => {
   const router = useRouter();
@@ -115,7 +115,7 @@ const OtpVerify = () => {
 
     try {
       // Verify OTP with the transaction ID
-      const result = await firebaseDemoService.verifyOTP(
+      const result = await awsDemoService.verifyOTP(
         params.transactionId as string,
         enteredOtp
       );
@@ -124,7 +124,7 @@ const OtpVerify = () => {
         console.log("✅ OTP verified successfully!");
 
         // Fetch the full NIC data including DOB and gender
-        const nicData = await firebaseDemoService.verifyNIC(
+        const nicData = await awsDemoService.verifyNIC(
           params.nicNumber as string
         );
 
@@ -167,7 +167,7 @@ const OtpVerify = () => {
   const handleResendOtp = async () => {
     console.log("Resending OTP...");
     try {
-      const result = await firebaseDemoService.requestOTP(
+      const result = await awsDemoService.requestOTP(
         params.nicNumber as string,
         params.mobileNumber as string
       );
@@ -282,7 +282,7 @@ const OtpVerify = () => {
               style={[
                 styles.confirmButton,
                 (isVerifying || otp.some((d) => !d)) &&
-                  styles.confirmButtonDisabled,
+                styles.confirmButtonDisabled,
               ]}
               onPress={handleConfirm}
               activeOpacity={0.8}

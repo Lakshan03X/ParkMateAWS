@@ -13,8 +13,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import firebaseDemoService from "../services/firebaseDemoService";
-import { DemoUserData } from "../services/firebaseDemoService";
+import awsDemoService from "../services/awsDemoService";
+import { DemoUserData } from "../services/awsDemoService";
 
 const AdminNICSetup = () => {
   const [isInitializing, setIsInitializing] = useState(false);
@@ -35,7 +35,7 @@ const AdminNICSetup = () => {
   const loadExistingNICs = async () => {
     setIsLoading(true);
     try {
-      const nics = await firebaseDemoService.getAllDemoUsers();
+      const nics = await awsDemoService.getAllDemoUsers();
       setExistingNICs(nics);
     } catch (error) {
       console.error("Error loading NICs:", error);
@@ -47,7 +47,7 @@ const AdminNICSetup = () => {
   const handleInitializeDemoData = async () => {
     Alert.alert(
       "Initialize Demo Data",
-      "This will add 5 demo NIC records to Firebase. Continue?",
+      "This will add 5 demo NIC records to AWS DynamoDB. Continue?",
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -55,7 +55,7 @@ const AdminNICSetup = () => {
           onPress: async () => {
             setIsInitializing(true);
             try {
-              await firebaseDemoService.initializeDemoData();
+              await awsDemoService.initializeDemoData();
               Alert.alert("Success", "Demo data initialized successfully!");
               await loadExistingNICs();
             } catch (error: any) {
@@ -96,7 +96,7 @@ const AdminNICSetup = () => {
         gender: gender || undefined,
       };
 
-      const result = await firebaseDemoService.addDemoUser(newUser);
+      const result = await awsDemoService.addDemoUser(newUser);
 
       if (result.status === "success") {
         Alert.alert("Success", "NIC added successfully!");
@@ -129,7 +129,7 @@ const AdminNICSetup = () => {
             <Ionicons name="shield-checkmark" size={48} color="#093F86" />
             <Text style={styles.title}>NIC Database Setup</Text>
             <Text style={styles.subtitle}>
-              Add NIC records to Firebase for verification
+              Add NIC records to AWS DynamoDB for verification
             </Text>
           </View>
 
@@ -146,7 +146,7 @@ const AdminNICSetup = () => {
               <>
                 <Ionicons name="cloud-upload" size={20} color="#FFFFFF" />
                 <Text style={styles.initButtonText}>
-                  Initialize 5 Demo NICs in Firebase
+                  Initialize 5 Demo NICs in AWS DynamoDB
                 </Text>
               </>
             )}
@@ -219,7 +219,7 @@ const AdminNICSetup = () => {
               {isInitializing ? (
                 <ActivityIndicator size="small" color="#FFFFFF" />
               ) : (
-                <Text style={styles.addButtonText}>Add NIC to Firebase</Text>
+                <Text style={styles.addButtonText}>Add NIC to AWS DynamoDB</Text>
               )}
             </TouchableOpacity>
           </View>
@@ -227,7 +227,7 @@ const AdminNICSetup = () => {
           {/* Existing NICs List */}
           <View style={styles.listSection}>
             <View style={styles.listHeader}>
-              <Text style={styles.sectionTitle}>Existing NICs in Firebase</Text>
+              <Text style={styles.sectionTitle}>Existing NICs in AWS DynamoDB</Text>
               <TouchableOpacity onPress={loadExistingNICs} disabled={isLoading}>
                 <Ionicons
                   name="refresh"
@@ -247,7 +247,7 @@ const AdminNICSetup = () => {
             ) : existingNICs.length === 0 ? (
               <View style={styles.emptyState}>
                 <Ionicons name="folder-open-outline" size={48} color="#999" />
-                <Text style={styles.emptyText}>No NICs found in Firebase</Text>
+                <Text style={styles.emptyText}>No NICs found in AWS DynamoDB</Text>
                 <Text style={styles.emptySubtext}>
                   Initialize demo data or add new NICs above
                 </Text>
@@ -280,7 +280,7 @@ const AdminNICSetup = () => {
               <Text style={styles.instructionsText}>
                 1. Click "Initialize 5 Demo NICs" to add sample data{"\n"}
                 2. Or manually add NICs using the form above{"\n"}
-                3. NICs will be stored in Firebase 'demoUsers' collection{"\n"}
+                3. NICs will be stored in AWS DynamoDB 'demoUsers' collection{"\n"}
                 4. Users can verify their NIC during registration
               </Text>
             </View>

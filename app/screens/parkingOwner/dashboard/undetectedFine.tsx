@@ -27,7 +27,7 @@ const UndetectedFine = () => {
   const [zones, setZones] = useState<string[]>([]);
   const [isLoadingZones, setIsLoadingZones] = useState(true);
 
-  // Fetch parking zones from Firebase on component mount
+  // Fetch parking zones from AWS DynamoDB on component mount
   useEffect(() => {
     fetchParkingZones();
   }, []);

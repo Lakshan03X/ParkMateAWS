@@ -18,7 +18,7 @@ import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
-import firebaseDemoService from "../../services/firebaseDemoService";
+import awsDemoService from "../../services/awsDemoService";
 
 const InspectorOtpVerify = () => {
   const router = useRouter();
@@ -106,7 +106,7 @@ const InspectorOtpVerify = () => {
     setIsVerifying(true);
 
     try {
-      const result = await firebaseDemoService.verifyOTP(
+      const result = await awsDemoService.verifyOTP(
         params.transactionId as string,
         enteredOtp
       );
@@ -158,7 +158,7 @@ const InspectorOtpVerify = () => {
   const handleResendOtp = async () => {
     console.log("Resending OTP...");
     try {
-      const result = await firebaseDemoService.requestOTP(
+      const result = await awsDemoService.requestOTP(
         params.employeeId as string,
         params.mobileNumber as string
       );
@@ -185,7 +185,13 @@ const InspectorOtpVerify = () => {
 
         <TouchableOpacity
           style={[styles.backButton, { top: insets.top + 10 }]}
-          onPress={() => router.back()}
+          onPress={() => {
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.replace("/screens/parkingInspector/inspectorLogin");
+            }
+          }}
           activeOpacity={0.7}
         >
           <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
@@ -263,7 +269,7 @@ const InspectorOtpVerify = () => {
               style={[
                 styles.confirmButton,
                 (isVerifying || otp.some((d) => !d)) &&
-                  styles.confirmButtonDisabled,
+                styles.confirmButtonDisabled,
               ]}
               onPress={handleConfirm}
               activeOpacity={0.8}

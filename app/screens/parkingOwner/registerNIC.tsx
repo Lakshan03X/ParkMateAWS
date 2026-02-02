@@ -19,7 +19,7 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import firebaseDemoService from "../../services/firebaseDemoService";
+import awsDemoService from "../../services/awsDemoService";
 import apiService from "../../services/apiService";
 
 const RegisterNIC = () => {
@@ -48,7 +48,7 @@ const RegisterNIC = () => {
         setAddress("");
 
         try {
-          const result = await firebaseDemoService.verifyNIC(nicNumber);
+          const result = await awsDemoService.verifyNIC(nicNumber);
 
           if (result.status === "success" && result.data) {
             // Auto-fill the name and address

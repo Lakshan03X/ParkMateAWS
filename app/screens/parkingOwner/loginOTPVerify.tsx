@@ -18,7 +18,7 @@ import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
-import firebaseDemoService from "../../services/firebaseDemoService";
+import awsDemoService from "../../services/awsDemoService";
 
 const LoginOTPVerify = () => {
   const router = useRouter();
@@ -115,7 +115,7 @@ const LoginOTPVerify = () => {
 
     try {
       // Verify OTP with the transaction ID
-      const result = await firebaseDemoService.verifyOTP(
+      const result = await awsDemoService.verifyOTP(
         params.transactionId as string,
         enteredOtp
       );
@@ -125,17 +125,25 @@ const LoginOTPVerify = () => {
         console.log("🔐 User logged in:", params.fullName);
 
         // Fetch user data to check profile completion
-        const { doc, getDoc } = await import("firebase/firestore");
-        const { db } = await import("../../services/firebase");
+        // Fetch user data to check profile completion
+        // Use dynamically imported service to avoid circular dependencies if any, 
+        // though regular import is usually fine. Using standard import at top level is better.
+        // But here we'll just use the service directly if we import it at top (which we already did in previous step)
+        // Wait, I need to check if I imported it at the top in previous steps. 
+        // I did import awsDemoService, but not awsDynamoService.
+        // Let's rely on awsDynamoService being imported.
+        // Since I'm using multi_replace, I should add the import first if not present.
+        // Actually, I can just do dynamic import equivalent or better yet, add import at top.
+
+        // Let's add import at top and replace this block.
+        const awsDynamoService = (await import("../../services/awsDynamoService")).default;
 
         let profileComplete = true;
         if (params.userId) {
           try {
-            const userDoc = await getDoc(
-              doc(db, "users", params.userId as string)
-            );
-            if (userDoc.exists()) {
-              const userData = userDoc.data();
+            const result = await awsDynamoService.getItem("users", { userId: params.userId });
+            if (result.item) {
+              const userData = result.item;
               profileComplete =
                 userData.profileComplete !== false &&
                 userData.nicNumber != null;
@@ -181,7 +189,7 @@ const LoginOTPVerify = () => {
   const handleResendOtp = async () => {
     console.log("Resending OTP...");
     try {
-      const result = await firebaseDemoService.requestOTP(
+      const result = await awsDemoService.requestOTP(
         params.nicNumber as string,
         params.mobileNumber as string
       );
@@ -295,7 +303,7 @@ const LoginOTPVerify = () => {
               style={[
                 styles.confirmButton,
                 (isVerifying || otp.some((d) => !d)) &&
-                  styles.confirmButtonDisabled,
+                styles.confirmButtonDisabled,
               ]}
               onPress={handleConfirm}
               activeOpacity={0.8}
