@@ -64,13 +64,13 @@ class ParkingZoneService {
   async getParkingZoneById(zoneId: string): Promise<ParkingZone | null> {
     try {
       const result = await awsDynamoService.getItem(COLLECTION_NAME, {
-        id: zoneId,
+        zoneId: zoneId, // Use zoneId as primary key
       });
 
       if (result.item) {
         const data = result.item;
         return {
-          id: data.id,
+          id: data.id || data.zoneId,
           municipalCouncil: data.municipalCouncil,
           zoneCode: data.zoneCode,
           location: data.location,
@@ -104,6 +104,7 @@ class ParkingZoneService {
 
       const newZone = {
         id,
+        zoneId: id, // DynamoDB table uses zoneId as primary key
         ...zoneData,
         status: zoneData.status || "active",
         createdAt: new Date().toISOString(),
@@ -129,7 +130,7 @@ class ParkingZoneService {
     try {
       await awsDynamoService.updateItem(
         COLLECTION_NAME,
-        { id: zoneId },
+        { zoneId: zoneId }, // Use zoneId as primary key
         {
           ...updates,
           updatedAt: new Date().toISOString(),
@@ -146,7 +147,7 @@ class ParkingZoneService {
    */
   async deleteParkingZone(zoneId: string): Promise<void> {
     try {
-      await awsDynamoService.deleteItem(COLLECTION_NAME, { id: zoneId });
+      await awsDynamoService.deleteItem(COLLECTION_NAME, { zoneId: zoneId }); // Use zoneId as primary key
     } catch (error) {
       console.error("Error deleting parking zone:", error);
       throw new Error("Failed to delete parking zone");
@@ -175,7 +176,7 @@ class ParkingZoneService {
 
       await awsDynamoService.updateItem(
         COLLECTION_NAME,
-        { id: zoneId },
+        { zoneId: zoneId }, // Use zoneId as primary key
         updateData,
       );
     } catch (error) {
