@@ -141,7 +141,7 @@ const LoginOTPVerify = () => {
         let profileComplete = true;
         if (params.userId) {
           try {
-            const result = await awsDynamoService.getItem("users", { userId: params.userId });
+            const result = await awsDynamoService.getItem("parkmate-users", { userId: params.userId });
             if (result.item) {
               const userData = result.item;
               profileComplete =

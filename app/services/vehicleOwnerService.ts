@@ -12,7 +12,7 @@ export interface VehicleOwner {
   updatedAt?: any;
 }
 
-const COLLECTION_NAME = "vehicleOwners";
+const COLLECTION_NAME = "parkmate-vehicles";
 
 class VehicleOwnerService {
   /**

@@ -15,7 +15,7 @@ export interface FineChecker {
   updatedAt?: any;
 }
 
-const COLLECTION_NAME = "fineCheckers";
+const COLLECTION_NAME = "parkmate-users";
 
 class FineCheckerService {
   /**
@@ -30,7 +30,7 @@ class FineCheckerService {
       }
 
       const checkers: FineChecker[] = result.items.map((item: any) => ({
-        id: item.id || item.checkerId,
+        id: item.id || item.checkerId || item.userId || `checker_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         fullName: item.fullName,
         email: item.email,
         municipalCouncil: item.municipalCouncil,
@@ -224,7 +224,7 @@ class FineCheckerService {
       }
 
       const checkers = result.items.map((item: any) => ({
-        id: item.id || item.checkerId,
+        id: item.id || item.checkerId || item.userId || `checker_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         fullName: item.fullName,
         email: item.email,
         municipalCouncil: item.municipalCouncil,
@@ -264,7 +264,7 @@ class FineCheckerService {
       }
 
       const checkers = result.items.map((item: any) => ({
-        id: item.id || item.checkerId,
+        id: item.id || item.checkerId || item.userId || `checker_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         fullName: item.fullName,
         email: item.email,
         municipalCouncil: item.municipalCouncil,

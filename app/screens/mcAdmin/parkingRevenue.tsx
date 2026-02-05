@@ -63,7 +63,7 @@ const ParkingRevenue = () => {
     parkingRatePerHour: "",
   });
 
-  const COLLECTION_NAME = "parkingRevenue";
+  const COLLECTION_NAME = "parkmate-revenue";
 
   // Load parking revenues from AWS DynamoDB
   useEffect(() => {

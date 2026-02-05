@@ -23,7 +23,7 @@ class ApiService {
   ): Promise<{ status: string; message: string; userId?: string }> {
     try {
       // Check if user already exists
-      const existingUser = await awsDynamoService.getItem("users", {
+      const existingUser = await awsDynamoService.getItem("parkmate-users", {
         nicNumber: userData.nicNumber,
       });
 
@@ -40,7 +40,7 @@ class ApiService {
         .substring(7)}`;
 
       // Add user to DynamoDB
-      const result = await awsDynamoService.putItem("users", {
+      const result = await awsDynamoService.putItem("parkmate-users", {
         userId,
         ...userData,
         createdAt: new Date().toISOString(),
@@ -75,7 +75,7 @@ class ApiService {
   ): Promise<{ status: string; message: string }> {
     try {
       const result = await awsDynamoService.updateItem(
-        "users",
+        "parkmate-users",
         { userId },
         { verified, verifiedAt: new Date().toISOString() },
       );
@@ -105,7 +105,7 @@ class ApiService {
     nicNumber: string,
   ): Promise<{ status: string; user?: any; message?: string }> {
     try {
-      const result = await awsDynamoService.getItem("users", {
+      const result = await awsDynamoService.getItem("parkmate-users", {
         nicNumber,
       });
 

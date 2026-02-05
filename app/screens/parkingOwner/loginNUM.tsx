@@ -54,7 +54,7 @@ const LoginNUM = () => {
       // Check if mobile number is registered in the system
       // Check if mobile number is registered in the system
       // Scan users table and filter by mobile number
-      const result = await awsDynamoService.scan("users");
+      const result = await awsDynamoService.scan("parkmate-users");
       const users = result.items || [];
       const user = users.find((u: any) => u.mobileNumber === mobileNumber);
 

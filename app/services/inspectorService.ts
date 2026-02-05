@@ -16,7 +16,7 @@ export interface Inspector {
   updatedAt?: any;
 }
 
-const COLLECTION_NAME = "inspectors";
+const COLLECTION_NAME = "parkmate-users";
 
 class InspectorService {
   /**
@@ -31,7 +31,7 @@ class InspectorService {
       }
 
       const inspectors: Inspector[] = result.items.map((item: any) => ({
-        id: item.id || item.inspectorId,
+        id: item.id || item.inspectorId || item.userId || `inspector_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         name: item.name,
         mobileNumber: item.mobileNumber,
         status: item.status || "online",
@@ -86,7 +86,7 @@ class InspectorService {
 
       const data = result.item;
       const inspector: Inspector = {
-        id: data.id || data.inspectorId,
+        id: data.id || data.inspectorId || data.userId || `inspector_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         name: data.name,
         mobileNumber: data.mobileNumber,
         status: data.status || "online",
@@ -181,7 +181,7 @@ class InspectorService {
 
       const data = result.item;
       return {
-        id: data.id || data.inspectorId,
+        id: data.id || data.inspectorId || data.userId || `inspector_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         name: data.name,
         mobileNumber: data.mobileNumber,
         status: data.status || "online",

@@ -47,7 +47,7 @@ const Profile = () => {
   const loadUserData = async () => {
     if (params.userId) {
       try {
-        const result = await awsDynamoService.getItem("users", {
+        const result = await awsDynamoService.getItem("parkmate-users", {
           userId: params.userId,
         });
         if (result.item) {
@@ -105,7 +105,7 @@ const Profile = () => {
 
       // Update user document with photo URL
       await awsDynamoService.updateItem(
-        "users",
+        "parkmate-users",
         { userId: params.userId },
         {
           profileImage: downloadUrl,
@@ -231,7 +231,7 @@ const Profile = () => {
       }
 
       await awsDynamoService.updateItem(
-        "users",
+        "parkmate-users",
         { userId: params.userId },
         updateData,
       );

@@ -16,7 +16,7 @@ export interface MCOfficer {
   selectedCouncil?: string;
 }
 
-const COLLECTION_NAME = "mcOfficers";
+const COLLECTION_NAME = "parkmate-users";
 
 class MCOfficerService {
   /**

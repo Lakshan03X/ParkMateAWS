@@ -46,15 +46,15 @@ const KycConsentMobile = () => {
         email: (params.email as string) || "",
         role: (params.role as string) || "parkingOwner",
         registrationType: "mobile",
-        nicNumber: null, // No NIC data yet
-        address: null,
+        nicNumber: `PENDING_${userId}`, // Unique placeholder for mobile registration (GSI requires non-null value)
+        address: "",
         verified: true,
         profileComplete: false, // Flag to show warning icon
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
 
-      await awsDynamoService.putItem("users", userData);
+      await awsDynamoService.putItem("parkmate-users", userData);
       console.log("✅ User saved to database with ID:", userId);
 
       // Show success animation

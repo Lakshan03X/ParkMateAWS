@@ -9,7 +9,7 @@ export interface DemoUserData {
 }
 
 class AWSDemoService {
-  private demoUsersTable = "demoUsers";
+  private demoUsersTable = "parkmate-nic-records";
 
   // Local demo data as fallback (works offline)
   private localDemoUsers: DemoUserData[] = [

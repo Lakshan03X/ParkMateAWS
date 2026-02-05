@@ -56,10 +56,10 @@ export interface PaymentReceipt {
 }
 
 class ParkingTicketService {
-  private FINES_COLLECTION = "fines";
-  private TICKETS_COLLECTION = "parkingTickets";
-  private RECEIPTS_COLLECTION = "paymentReceipts";
-  private ZONES_COLLECTION = "parkingZones";
+  private FINES_COLLECTION = "parkmate-fines";
+  private TICKETS_COLLECTION = "parkmate-parking-tickets";
+  private RECEIPTS_COLLECTION = "parkmate-receipts";
+  private ZONES_COLLECTION = "parkmate-parking-zones";
 
   /**
    * Get active parking ticket for a vehicle

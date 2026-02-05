@@ -17,7 +17,7 @@ export interface ParkingZone {
   updatedAt?: any;
 }
 
-const COLLECTION_NAME = "parkingZones";
+const COLLECTION_NAME = "parkmate-parking-zones";
 
 class ParkingZoneService {
   /**
