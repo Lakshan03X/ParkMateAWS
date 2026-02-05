@@ -77,7 +77,7 @@ class VehicleOwnerService {
    */
   async updateOwner(
     ownerId: string,
-    updates: Partial<VehicleOwner>
+    updates: Partial<VehicleOwner>,
   ): Promise<void> {
     try {
       await awsDynamoService.updateItem(
@@ -86,7 +86,7 @@ class VehicleOwnerService {
         {
           ...updates,
           updatedAt: new Date().toISOString(),
-        }
+        },
       );
     } catch (error) {
       console.error("Error updating vehicle owner:", error);
@@ -148,7 +148,7 @@ class VehicleOwnerService {
    * Get owners by status
    */
   async getOwnersByStatus(
-    status: "online" | "offline"
+    status: "online" | "offline",
   ): Promise<VehicleOwner[]> {
     try {
       const result = await awsDynamoService.scan(COLLECTION_NAME);

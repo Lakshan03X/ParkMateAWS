@@ -63,7 +63,9 @@ class ParkingZoneService {
    */
   async getParkingZoneById(zoneId: string): Promise<ParkingZone | null> {
     try {
-      const result = await awsDynamoService.getItem(COLLECTION_NAME, { id: zoneId });
+      const result = await awsDynamoService.getItem(COLLECTION_NAME, {
+        id: zoneId,
+      });
 
       if (result.item) {
         const data = result.item;
@@ -95,7 +97,7 @@ class ParkingZoneService {
    * Add a new parking zone
    */
   async addParkingZone(
-    zoneData: Omit<ParkingZone, "id">
+    zoneData: Omit<ParkingZone, "id">,
   ): Promise<ParkingZone> {
     try {
       const id = `ZONE_${Date.now()}_${Math.random().toString(36).substring(7)}`;
@@ -122,7 +124,7 @@ class ParkingZoneService {
    */
   async updateParkingZone(
     zoneId: string,
-    updates: Partial<ParkingZone>
+    updates: Partial<ParkingZone>,
   ): Promise<void> {
     try {
       await awsDynamoService.updateItem(
@@ -131,7 +133,7 @@ class ParkingZoneService {
         {
           ...updates,
           updatedAt: new Date().toISOString(),
-        }
+        },
       );
     } catch (error) {
       console.error("Error updating parking zone:", error);
@@ -157,7 +159,7 @@ class ParkingZoneService {
   async updateZoneStatus(
     zoneId: string,
     status: "active" | "inactive",
-    inactiveReason?: string
+    inactiveReason?: string,
   ): Promise<void> {
     try {
       const updateData: any = {
@@ -171,7 +173,11 @@ class ParkingZoneService {
         updateData.inactiveReason = "";
       }
 
-      await awsDynamoService.updateItem(COLLECTION_NAME, { id: zoneId }, updateData);
+      await awsDynamoService.updateItem(
+        COLLECTION_NAME,
+        { id: zoneId },
+        updateData,
+      );
     } catch (error) {
       console.error("Error updating zone status:", error);
       throw new Error("Failed to update zone status");
@@ -182,7 +188,7 @@ class ParkingZoneService {
    * Get parking zones by status
    */
   async getParkingZonesByStatus(
-    status: "active" | "inactive"
+    status: "active" | "inactive",
   ): Promise<ParkingZone[]> {
     try {
       const result = await awsDynamoService.scan(COLLECTION_NAME);
@@ -280,7 +286,7 @@ class ParkingZoneService {
    * Get parking zones by municipal council
    */
   async getZonesByMunicipalCouncil(
-    municipalCouncil: string
+    municipalCouncil: string,
   ): Promise<ParkingZone[]> {
     try {
       const result = await awsDynamoService.scan(COLLECTION_NAME);

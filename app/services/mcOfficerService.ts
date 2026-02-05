@@ -86,7 +86,7 @@ class MCOfficerService {
    */
   async updateOfficer(
     officerId: string,
-    updates: Partial<MCOfficer>
+    updates: Partial<MCOfficer>,
   ): Promise<void> {
     try {
       await awsDynamoService.updateItem(
@@ -95,7 +95,7 @@ class MCOfficerService {
         {
           ...updates,
           updatedAt: new Date().toISOString(),
-        }
+        },
       );
     } catch (error) {
       console.error("Error updating MC officer:", error);
@@ -161,7 +161,7 @@ class MCOfficerService {
    * Get MC Officers by status
    */
   async getOfficersByStatus(
-    status: "on duty" | "off duty"
+    status: "on duty" | "off duty",
   ): Promise<MCOfficer[]> {
     try {
       const result = await awsDynamoService.scan(COLLECTION_NAME);
@@ -201,16 +201,17 @@ class MCOfficerService {
   async loginOfficer(
     councilId: string,
     email: string,
-    password: string
+    password: string,
   ): Promise<MCOfficer | null> {
     try {
       const result = await awsDynamoService.scan(COLLECTION_NAME);
       const allOfficers = result.items || [];
 
-      const officer = allOfficers.find((o: any) =>
-        o.councilId === councilId &&
-        o.email === email &&
-        o.password === password
+      const officer = allOfficers.find(
+        (o: any) =>
+          o.councilId === councilId &&
+          o.email === email &&
+          o.password === password,
       );
 
       if (officer) {
@@ -243,7 +244,7 @@ class MCOfficerService {
    */
   async updateOfficerCouncil(
     officerId: string,
-    selectedCouncil: string
+    selectedCouncil: string,
   ): Promise<void> {
     try {
       await awsDynamoService.updateItem(
@@ -252,7 +253,7 @@ class MCOfficerService {
         {
           selectedCouncil: selectedCouncil,
           updatedAt: new Date().toISOString(),
-        }
+        },
       );
     } catch (error) {
       console.error("Error updating officer council:", error);

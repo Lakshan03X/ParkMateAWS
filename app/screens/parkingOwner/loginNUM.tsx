@@ -68,7 +68,7 @@ const LoginNUM = () => {
               text: "Sign Up",
               onPress: () => router.replace("/screens/parkingOwner/signUp"),
             },
-          ]
+          ],
         );
         setIsChecking(false);
         return;
@@ -94,7 +94,7 @@ const LoginNUM = () => {
                 // Request OTP
                 const otpResult = await awsDemoService.requestOTP(
                   userData.nicNumber || "",
-                  mobileNumber
+                  mobileNumber,
                 );
 
                 if (otpResult.status === "success") {
@@ -120,7 +120,7 @@ const LoginNUM = () => {
               }
             },
           },
-        ]
+        ],
       );
     } catch (error: any) {
       Alert.alert("Error", error.message || "An unexpected error occurred");
@@ -178,8 +178,8 @@ const LoginNUM = () => {
                 style={[
                   styles.input,
                   mobileError &&
-                  mobileNumber.length === 10 &&
-                  styles.inputError,
+                    mobileNumber.length === 10 &&
+                    styles.inputError,
                 ]}
                 placeholder="07XXXXXXXX"
                 placeholderTextColor="#999"
@@ -211,7 +211,7 @@ const LoginNUM = () => {
               style={[
                 styles.sendOtpButton,
                 (isChecking || mobileNumber.length !== 10 || mobileError) &&
-                styles.sendOtpButtonDisabled,
+                  styles.sendOtpButtonDisabled,
               ]}
               onPress={handleSendOTP}
               activeOpacity={0.8}

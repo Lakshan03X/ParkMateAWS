@@ -117,7 +117,7 @@ const LoginOTPVerify = () => {
       // Verify OTP with the transaction ID
       const result = await awsDemoService.verifyOTP(
         params.transactionId as string,
-        enteredOtp
+        enteredOtp,
       );
 
       if (result.status === "success" && result.verified) {
@@ -126,22 +126,26 @@ const LoginOTPVerify = () => {
 
         // Fetch user data to check profile completion
         // Fetch user data to check profile completion
-        // Use dynamically imported service to avoid circular dependencies if any, 
+        // Use dynamically imported service to avoid circular dependencies if any,
         // though regular import is usually fine. Using standard import at top level is better.
         // But here we'll just use the service directly if we import it at top (which we already did in previous step)
-        // Wait, I need to check if I imported it at the top in previous steps. 
+        // Wait, I need to check if I imported it at the top in previous steps.
         // I did import awsDemoService, but not awsDynamoService.
         // Let's rely on awsDynamoService being imported.
         // Since I'm using multi_replace, I should add the import first if not present.
         // Actually, I can just do dynamic import equivalent or better yet, add import at top.
 
         // Let's add import at top and replace this block.
-        const awsDynamoService = (await import("../../services/awsDynamoService")).default;
+        const awsDynamoService = (
+          await import("../../services/awsDynamoService")
+        ).default;
 
         let profileComplete = true;
         if (params.userId) {
           try {
-            const result = await awsDynamoService.getItem("parkmate-users", { userId: params.userId });
+            const result = await awsDynamoService.getItem("parkmate-users", {
+              userId: params.userId,
+            });
             if (result.item) {
               const userData = result.item;
               profileComplete =
@@ -191,7 +195,7 @@ const LoginOTPVerify = () => {
     try {
       const result = await awsDemoService.requestOTP(
         params.nicNumber as string,
-        params.mobileNumber as string
+        params.mobileNumber as string,
       );
 
       if (result.status === "success") {
@@ -303,7 +307,7 @@ const LoginOTPVerify = () => {
               style={[
                 styles.confirmButton,
                 (isVerifying || otp.some((d) => !d)) &&
-                styles.confirmButtonDisabled,
+                  styles.confirmButtonDisabled,
               ]}
               onPress={handleConfirm}
               activeOpacity={0.8}

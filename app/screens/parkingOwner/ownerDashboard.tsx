@@ -36,7 +36,9 @@ const OwnerDashboard = () => {
     const checkProfileStatus = async () => {
       if (params.userId) {
         try {
-          const result = await awsDynamoService.getItem("parkmate-users", { userId: params.userId });
+          const result = await awsDynamoService.getItem("parkmate-users", {
+            userId: params.userId,
+          });
 
           if (result.item) {
             const userData = result.item;
@@ -84,7 +86,7 @@ const OwnerDashboard = () => {
               });
             },
           },
-        ]
+        ],
       );
     } else {
       router.push({

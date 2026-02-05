@@ -31,7 +31,11 @@ class InspectorService {
       }
 
       const inspectors: Inspector[] = result.items.map((item: any) => ({
-        id: item.id || item.inspectorId || item.userId || `inspector_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        id:
+          item.id ||
+          item.inspectorId ||
+          item.userId ||
+          `inspector_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         name: item.name,
         mobileNumber: item.mobileNumber,
         status: item.status || "online",
@@ -64,7 +68,7 @@ class InspectorService {
    */
   async verifyInspectorLogin(
     employeeId: string,
-    mobileNumber: string
+    mobileNumber: string,
   ): Promise<{ status: string; message: string; inspector?: Inspector }> {
     try {
       console.log("🔍 Verifying inspector login:", {
@@ -86,7 +90,11 @@ class InspectorService {
 
       const data = result.item;
       const inspector: Inspector = {
-        id: data.id || data.inspectorId || data.userId || `inspector_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        id:
+          data.id ||
+          data.inspectorId ||
+          data.userId ||
+          `inspector_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         name: data.name,
         mobileNumber: data.mobileNumber,
         status: data.status || "online",
@@ -104,7 +112,7 @@ class InspectorService {
       const normalizedInputNumber = mobileNumber.replace(/[\s-]/g, "");
       const normalizedInspectorNumber = inspector.mobileNumber.replace(
         /[\s-]/g,
-        ""
+        "",
       );
 
       if (normalizedInputNumber !== normalizedInspectorNumber) {
@@ -136,7 +144,7 @@ class InspectorService {
    */
   async updateInspectorStatus(
     inspectorId: string,
-    status: "online" | "offline"
+    status: "online" | "offline",
   ): Promise<{ status: string; message: string }> {
     try {
       const result = await awsDynamoService.updateItem(
@@ -145,7 +153,7 @@ class InspectorService {
         {
           status: status,
           updatedAt: new Date().toISOString(),
-        }
+        },
       );
 
       if (!result.success) {
@@ -181,7 +189,11 @@ class InspectorService {
 
       const data = result.item;
       return {
-        id: data.id || data.inspectorId || data.userId || `inspector_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        id:
+          data.id ||
+          data.inspectorId ||
+          data.userId ||
+          `inspector_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         name: data.name,
         mobileNumber: data.mobileNumber,
         status: data.status || "online",
@@ -204,7 +216,7 @@ class InspectorService {
    * Add a new inspector
    */
   async addInspector(
-    inspectorData: Omit<Inspector, "id">
+    inspectorData: Omit<Inspector, "id">,
   ): Promise<{ status: string; message: string; inspectorId?: string }> {
     try {
       const inspectorId =
@@ -223,7 +235,7 @@ class InspectorService {
 
       const result = await awsDynamoService.putItem(
         COLLECTION_NAME,
-        newInspector
+        newInspector,
       );
 
       if (!result.success) {
@@ -250,7 +262,7 @@ class InspectorService {
    */
   async updateInspector(
     inspectorId: string,
-    updates: Partial<Inspector>
+    updates: Partial<Inspector>,
   ): Promise<{ status: string; message: string }> {
     try {
       const result = await awsDynamoService.updateItem(
@@ -259,7 +271,7 @@ class InspectorService {
         {
           ...updates,
           updatedAt: new Date().toISOString(),
-        }
+        },
       );
 
       if (!result.success) {
@@ -284,7 +296,7 @@ class InspectorService {
    * Delete inspector
    */
   async deleteInspector(
-    inspectorId: string
+    inspectorId: string,
   ): Promise<{ status: string; message: string }> {
     try {
       const result = await awsDynamoService.deleteItem(COLLECTION_NAME, {
@@ -314,7 +326,7 @@ class InspectorService {
    */
   async assignZoneToInspector(
     inspectorId: string,
-    zoneId: string
+    zoneId: string,
   ): Promise<{ status: string; message: string }> {
     try {
       const result = await awsDynamoService.updateItem(
@@ -324,7 +336,7 @@ class InspectorService {
           assignedZone: zoneId,
           isAssigned: true,
           updatedAt: new Date().toISOString(),
-        }
+        },
       );
 
       if (!result.success) {

@@ -30,7 +30,11 @@ class FineCheckerService {
       }
 
       const checkers: FineChecker[] = result.items.map((item: any) => ({
-        id: item.id || item.checkerId || item.userId || `checker_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        id:
+          item.id ||
+          item.checkerId ||
+          item.userId ||
+          `checker_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         fullName: item.fullName,
         email: item.email,
         municipalCouncil: item.municipalCouncil,
@@ -224,7 +228,11 @@ class FineCheckerService {
       }
 
       const checkers = result.items.map((item: any) => ({
-        id: item.id || item.checkerId || item.userId || `checker_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        id:
+          item.id ||
+          item.checkerId ||
+          item.userId ||
+          `checker_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         fullName: item.fullName,
         email: item.email,
         municipalCouncil: item.municipalCouncil,
@@ -264,7 +272,11 @@ class FineCheckerService {
       }
 
       const checkers = result.items.map((item: any) => ({
-        id: item.id || item.checkerId || item.userId || `checker_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        id:
+          item.id ||
+          item.checkerId ||
+          item.userId ||
+          `checker_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         fullName: item.fullName,
         email: item.email,
         municipalCouncil: item.municipalCouncil,

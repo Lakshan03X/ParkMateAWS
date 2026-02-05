@@ -39,7 +39,7 @@ const ParkingRevenue = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [revenues, setRevenues] = useState<ParkingRevenue[]>([]);
   const [filteredRevenues, setFilteredRevenues] = useState<ParkingRevenue[]>(
-    []
+    [],
   );
   const [isLoading, setIsLoading] = useState(true);
 
@@ -50,7 +50,7 @@ const ParkingRevenue = () => {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [selectedRevenue, setSelectedRevenue] = useState<ParkingRevenue | null>(
-    null
+    null,
   );
   const [isSaving, setIsSaving] = useState(false);
 
@@ -75,16 +75,18 @@ const ParkingRevenue = () => {
       setIsLoading(true);
       const result = await awsDynamoService.scan(COLLECTION_NAME);
 
-      const revenuesData: ParkingRevenue[] = (result.items || []).map((item: any) => ({
-        id: item.id || item.revenueId, // Fallback if id is stored differently
-        boralesgamuwa: item.boralesgamuwa,
-        zoneCode: item.zoneCode,
-        location: item.location,
-        zoneType: item.zoneType,
-        parkingRatePerHour: item.parkingRatePerHour,
-        createdAt: item.createdAt,
-        updatedAt: item.updatedAt,
-      }));
+      const revenuesData: ParkingRevenue[] = (result.items || []).map(
+        (item: any) => ({
+          id: item.id || item.revenueId, // Fallback if id is stored differently
+          boralesgamuwa: item.boralesgamuwa,
+          zoneCode: item.zoneCode,
+          location: item.location,
+          zoneType: item.zoneType,
+          parkingRatePerHour: item.parkingRatePerHour,
+          createdAt: item.createdAt,
+          updatedAt: item.updatedAt,
+        }),
+      );
 
       // Sort by createdAt desc (client-side since we scanned)
       revenuesData.sort((a, b) => {
@@ -115,7 +117,7 @@ const ParkingRevenue = () => {
             .toLowerCase()
             .includes(searchQuery.toLowerCase()) ||
           revenue.zoneCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          revenue.location.toLowerCase().includes(searchQuery.toLowerCase())
+          revenue.location.toLowerCase().includes(searchQuery.toLowerCase()),
       );
     }
 
@@ -221,7 +223,7 @@ const ParkingRevenue = () => {
           zoneType: formData.zoneType,
           parkingRatePerHour: formData.parkingRatePerHour,
           updatedAt: new Date().toISOString(),
-        }
+        },
       );
 
       await loadParkingRevenues();
@@ -250,7 +252,9 @@ const ParkingRevenue = () => {
     try {
       setIsSaving(true);
 
-      await awsDynamoService.deleteItem(COLLECTION_NAME, { id: selectedRevenue.id });
+      await awsDynamoService.deleteItem(COLLECTION_NAME, {
+        id: selectedRevenue.id,
+      });
 
       await loadParkingRevenues();
 
