@@ -10,6 +10,8 @@ import {
   Alert,
   ActivityIndicator,
   Image,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
@@ -218,235 +220,241 @@ const InspectorProfile = () => {
           <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
 
-        <ScrollView
-          contentContainerStyle={[
-            styles.scrollContent,
-            { paddingTop: insets.top + 60 },
-          ]}
-          showsVerticalScrollIndicator={false}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={{ flex: 1 }}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
         >
-          {/* Profile Image */}
-          <View style={styles.profileImageContainer}>
-            <TouchableOpacity onPress={pickImage} disabled={!isEditing}>
-              {profilePictureUrl ? (
-                <Image
-                  source={{ uri: profilePictureUrl }}
-                  style={styles.profileImage}
-                />
-              ) : (
-                <View style={styles.profileCircle}>
-                  <Ionicons name="person" size={60} color="#093F86" />
-                </View>
-              )}
-              {isUploadingImage && (
-                <ActivityIndicator
-                  size="small"
-                  color="#093F86"
-                  style={styles.imageLoader}
-                />
-              )}
-            </TouchableOpacity>
-          </View>
-
-          {/* Title */}
-          <Text style={styles.title}>Inspector Profile</Text>
-
-          {/* Form Container */}
-          <View style={styles.formContainer}>
-            {/* Name Input */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Name</Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  !isEditing && styles.inputDisabled,
-                  isEditing && styles.inputEditable,
-                ]}
-                placeholder="Enter your name"
-                placeholderTextColor="#999"
-                value={name}
-                onChangeText={setName}
-                editable={isEditing}
-              />
-            </View>
-
-            {/* Email Input */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Email</Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  !isEditing && styles.inputDisabled,
-                  isEditing && styles.inputEditable,
-                ]}
-                placeholder="nimal@gmail.com"
-                placeholderTextColor="#999"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                editable={isEditing}
-              />
-            </View>
-
-            {/* Phone Number Input (Non-editable) */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Phone Number</Text>
-              <View style={styles.lockedInputContainer}>
-                <TextInput
-                  style={[styles.input, styles.inputLocked]}
-                  placeholder="071 156 5678"
-                  placeholderTextColor="#999"
-                  value={mobileNumber}
-                  editable={false}
-                />
-                <View style={styles.lockIcon}>
-                  <Ionicons name="lock-closed" size={16} color="#666" />
-                </View>
-              </View>
-              <Text style={styles.hintText}>
-                Phone number cannot be changed
-              </Text>
-            </View>
-
-            {/* Inspector ID Input (Non-editable) */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Inspector Id</Text>
-              <View style={styles.lockedInputContainer}>
-                <TextInput
-                  style={[styles.input, styles.inputLocked]}
-                  placeholder="Ins10779"
-                  placeholderTextColor="#999"
-                  value={inspectorId}
-                  editable={false}
-                />
-                <View style={styles.lockIcon}>
-                  <Ionicons name="lock-closed" size={16} color="#666" />
-                </View>
-              </View>
-              <Text style={styles.hintText}>
-                Inspector ID cannot be changed
-              </Text>
-            </View>
-
-            {/* Municipal Council Dropdown */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Municipal Council</Text>
-              <TouchableOpacity
-                style={[
-                  styles.dropdownButton,
-                  !isEditing && styles.inputDisabled,
-                  isEditing && styles.inputEditable,
-                ]}
-                onPress={() =>
-                  isEditing && setShowCouncilPicker(!showCouncilPicker)
-                }
-                disabled={!isEditing}
-                activeOpacity={0.7}
-              >
-                <Text
-                  style={[
-                    styles.dropdownText,
-                    !isEditing && styles.disabledText,
-                  ]}
-                >
-                  {municipalCouncil}
-                </Text>
-                <Ionicons name="chevron-down" size={20} color="#666" />
-              </TouchableOpacity>
-
-              {/* Council Options */}
-              {showCouncilPicker && isEditing && (
-                <View style={styles.optionsContainer}>
-                  <ScrollView style={styles.optionsList} nestedScrollEnabled>
-                    {municipalCouncils.map((council) => (
-                      <TouchableOpacity
-                        key={council}
-                        style={[
-                          styles.optionItem,
-                          municipalCouncil === council &&
-                            styles.optionItemSelected,
-                        ]}
-                        onPress={() => handleCouncilSelect(council)}
-                        activeOpacity={0.7}
-                      >
-                        <Text
-                          style={[
-                            styles.optionText,
-                            municipalCouncil === council &&
-                              styles.optionTextSelected,
-                          ]}
-                        >
-                          {council}
-                        </Text>
-                        {municipalCouncil === council && (
-                          <Ionicons
-                            name="checkmark"
-                            size={20}
-                            color="#093F86"
-                          />
-                        )}
-                      </TouchableOpacity>
-                    ))}
-                  </ScrollView>
-                </View>
-              )}
-            </View>
-          </View>
-
-          {/* Action Buttons */}
-          {!isEditing ? (
-            <TouchableOpacity
-              style={styles.editButton}
-              onPress={() => setIsEditing(true)}
-              activeOpacity={0.8}
-            >
-              <Ionicons
-                name="create-outline"
-                size={20}
-                color="#FFFFFF"
-                style={styles.buttonIcon}
-              />
-              <Text style={styles.editButtonText}>Edit Details</Text>
-            </TouchableOpacity>
-          ) : (
-            <View style={styles.actionButtonsRow}>
-              <TouchableOpacity
-                style={[styles.actionButton, styles.cancelButton]}
-                onPress={handleCancel}
-                activeOpacity={0.8}
-                disabled={isSaving}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.actionButton,
-                  styles.saveButton,
-                  isSaving && styles.saveButtonDisabled,
-                ]}
-                onPress={handleSaveDetails}
-                activeOpacity={0.8}
-                disabled={isSaving}
-              >
-                {isSaving ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
+          <ScrollView
+            contentContainerStyle={[
+              styles.scrollContent,
+              { paddingTop: insets.top + 60 },
+            ]}
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Profile Image */}
+            <View style={styles.profileImageContainer}>
+              <TouchableOpacity onPress={pickImage} disabled={!isEditing}>
+                {profilePictureUrl ? (
+                  <Image
+                    source={{ uri: profilePictureUrl }}
+                    style={styles.profileImage}
+                  />
                 ) : (
-                  <>
-                    <Ionicons
-                      name="checkmark-circle-outline"
-                      size={20}
-                      color="#FFFFFF"
-                      style={styles.buttonIcon}
-                    />
-                    <Text style={styles.saveButtonText}>Save Details</Text>
-                  </>
+                  <View style={styles.profileCircle}>
+                    <Ionicons name="person" size={60} color="#093F86" />
+                  </View>
+                )}
+                {isUploadingImage && (
+                  <ActivityIndicator
+                    size="small"
+                    color="#093F86"
+                    style={styles.imageLoader}
+                  />
                 )}
               </TouchableOpacity>
             </View>
-          )}
-        </ScrollView>
+
+            {/* Title */}
+            <Text style={styles.title}>Inspector Profile</Text>
+
+            {/* Form Container */}
+            <View style={styles.formContainer}>
+              {/* Name Input */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Name</Text>
+                <TextInput
+                  style={[
+                    styles.input,
+                    !isEditing && styles.inputDisabled,
+                    isEditing && styles.inputEditable,
+                  ]}
+                  placeholder="Enter your name"
+                  placeholderTextColor="#999"
+                  value={name}
+                  onChangeText={setName}
+                  editable={isEditing}
+                />
+              </View>
+
+              {/* Email Input */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Email</Text>
+                <TextInput
+                  style={[
+                    styles.input,
+                    !isEditing && styles.inputDisabled,
+                    isEditing && styles.inputEditable,
+                  ]}
+                  placeholder="nimal@gmail.com"
+                  placeholderTextColor="#999"
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  editable={isEditing}
+                />
+              </View>
+
+              {/* Phone Number Input (Non-editable) */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Phone Number</Text>
+                <View style={styles.lockedInputContainer}>
+                  <TextInput
+                    style={[styles.input, styles.inputLocked]}
+                    placeholder="071 156 5678"
+                    placeholderTextColor="#999"
+                    value={mobileNumber}
+                    editable={false}
+                  />
+                  <View style={styles.lockIcon}>
+                    <Ionicons name="lock-closed" size={16} color="#666" />
+                  </View>
+                </View>
+                <Text style={styles.hintText}>
+                  Phone number cannot be changed
+                </Text>
+              </View>
+
+              {/* Inspector ID Input (Non-editable) */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Inspector Id</Text>
+                <View style={styles.lockedInputContainer}>
+                  <TextInput
+                    style={[styles.input, styles.inputLocked]}
+                    placeholder="Ins10779"
+                    placeholderTextColor="#999"
+                    value={inspectorId}
+                    editable={false}
+                  />
+                  <View style={styles.lockIcon}>
+                    <Ionicons name="lock-closed" size={16} color="#666" />
+                  </View>
+                </View>
+                <Text style={styles.hintText}>
+                  Inspector ID cannot be changed
+                </Text>
+              </View>
+
+              {/* Municipal Council Dropdown */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Municipal Council</Text>
+                <TouchableOpacity
+                  style={[
+                    styles.dropdownButton,
+                    !isEditing && styles.inputDisabled,
+                    isEditing && styles.inputEditable,
+                  ]}
+                  onPress={() =>
+                    isEditing && setShowCouncilPicker(!showCouncilPicker)
+                  }
+                  disabled={!isEditing}
+                  activeOpacity={0.7}
+                >
+                  <Text
+                    style={[
+                      styles.dropdownText,
+                      !isEditing && styles.disabledText,
+                    ]}
+                  >
+                    {municipalCouncil}
+                  </Text>
+                  <Ionicons name="chevron-down" size={20} color="#666" />
+                </TouchableOpacity>
+
+                {/* Council Options */}
+                {showCouncilPicker && isEditing && (
+                  <View style={styles.optionsContainer}>
+                    <ScrollView style={styles.optionsList} nestedScrollEnabled>
+                      {municipalCouncils.map((council) => (
+                        <TouchableOpacity
+                          key={council}
+                          style={[
+                            styles.optionItem,
+                            municipalCouncil === council &&
+                              styles.optionItemSelected,
+                          ]}
+                          onPress={() => handleCouncilSelect(council)}
+                          activeOpacity={0.7}
+                        >
+                          <Text
+                            style={[
+                              styles.optionText,
+                              municipalCouncil === council &&
+                                styles.optionTextSelected,
+                            ]}
+                          >
+                            {council}
+                          </Text>
+                          {municipalCouncil === council && (
+                            <Ionicons
+                              name="checkmark"
+                              size={20}
+                              color="#093F86"
+                            />
+                          )}
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                  </View>
+                )}
+              </View>
+            </View>
+
+            {/* Action Buttons */}
+            {!isEditing ? (
+              <TouchableOpacity
+                style={styles.editButton}
+                onPress={() => setIsEditing(true)}
+                activeOpacity={0.8}
+              >
+                <Ionicons
+                  name="create-outline"
+                  size={20}
+                  color="#FFFFFF"
+                  style={styles.buttonIcon}
+                />
+                <Text style={styles.editButtonText}>Edit Details</Text>
+              </TouchableOpacity>
+            ) : (
+              <View style={styles.actionButtonsRow}>
+                <TouchableOpacity
+                  style={[styles.actionButton, styles.cancelButton]}
+                  onPress={handleCancel}
+                  activeOpacity={0.8}
+                  disabled={isSaving}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.actionButton,
+                    styles.saveButton,
+                    isSaving && styles.saveButtonDisabled,
+                  ]}
+                  onPress={handleSaveDetails}
+                  activeOpacity={0.8}
+                  disabled={isSaving}
+                >
+                  {isSaving ? (
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  ) : (
+                    <>
+                      <Ionicons
+                        name="checkmark-circle-outline"
+                        size={20}
+                        color="#FFFFFF"
+                        style={styles.buttonIcon}
+                      />
+                      <Text style={styles.saveButtonText}>Save Details</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              </View>
+            )}
+          </ScrollView>
+        </KeyboardAvoidingView>
       </SafeAreaView>
     </View>
   );

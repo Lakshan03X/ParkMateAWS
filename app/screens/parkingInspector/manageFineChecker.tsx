@@ -11,6 +11,8 @@ import {
   ActivityIndicator,
   Alert,
   Modal,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { useRouter } from "expo-router";
 import {
@@ -53,7 +55,7 @@ const ManageFineChecker = () => {
   const [showCouncilPicker, setShowCouncilPicker] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [selectedChecker, setSelectedChecker] = useState<FineChecker | null>(
-    null
+    null,
   );
   const [isSaving, setIsSaving] = useState(false);
 
@@ -92,7 +94,7 @@ const ManageFineChecker = () => {
     // Apply status filter
     if (selectedFilter !== "all") {
       filtered = filtered.filter(
-        (checker) => checker.status === selectedFilter
+        (checker) => checker.status === selectedFilter,
       );
     }
 
@@ -106,7 +108,9 @@ const ManageFineChecker = () => {
             .toLowerCase()
             .includes(searchQuery.toLowerCase()) ||
           (checker.checkerId &&
-            checker.checkerId.toLowerCase().includes(searchQuery.toLowerCase()))
+            checker.checkerId
+              .toLowerCase()
+              .includes(searchQuery.toLowerCase())),
       );
     }
 
@@ -476,105 +480,113 @@ const ManageFineChecker = () => {
         onRequestClose={() => setShowAddModal(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <TouchableOpacity
-                style={styles.modalBackButton}
-                onPress={() => setShowAddModal(false)}
-              >
-                <Ionicons name="arrow-back" size={24} color="#000" />
-              </TouchableOpacity>
-              <Text style={styles.modalTitle}>Add Fine Checker</Text>
-              <View style={styles.modalSpacer} />
-            </View>
-
-            <ScrollView style={styles.modalForm}>
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Full Name *</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter full name"
-                  placeholderTextColor="#999"
-                  value={formData.fullName}
-                  onChangeText={(text) =>
-                    setFormData({ ...formData, fullName: text })
-                  }
-                />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Email *</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter email address"
-                  placeholderTextColor="#999"
-                  value={formData.email}
-                  onChangeText={(text) =>
-                    setFormData({ ...formData, email: text })
-                  }
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Password *</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter password"
-                  placeholderTextColor="#999"
-                  value={formData.password}
-                  onChangeText={(text) =>
-                    setFormData({ ...formData, password: text })
-                  }
-                  secureTextEntry
-                />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Municipal Council *</Text>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            style={{ flex: 1 }}
+          >
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
                 <TouchableOpacity
-                  style={styles.pickerButton}
-                  onPress={() => setShowCouncilPicker(true)}
+                  style={styles.modalBackButton}
+                  onPress={() => setShowAddModal(false)}
                 >
-                  <Text
-                    style={[
-                      styles.pickerButtonText,
-                      !formData.municipalCouncil && styles.pickerPlaceholder,
-                    ]}
-                  >
-                    {formData.municipalCouncil || "Select Municipal Council"}
-                  </Text>
-                  <Ionicons name="chevron-down" size={20} color="#666" />
+                  <Ionicons name="arrow-back" size={24} color="#000" />
                 </TouchableOpacity>
+                <Text style={styles.modalTitle}>Add Fine Checker</Text>
+                <View style={styles.modalSpacer} />
               </View>
 
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Checker ID (Optional)</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter checker ID"
-                  placeholderTextColor="#999"
-                  value={formData.checkerId}
-                  onChangeText={(text) =>
-                    setFormData({ ...formData, checkerId: text })
-                  }
-                />
-              </View>
-            </ScrollView>
+              <ScrollView style={styles.modalForm}>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Full Name *</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter full name"
+                    placeholderTextColor="#999"
+                    value={formData.fullName}
+                    onChangeText={(text) =>
+                      setFormData({ ...formData, fullName: text })
+                    }
+                  />
+                </View>
 
-            <TouchableOpacity
-              style={[styles.saveButton, isSaving && styles.saveButtonDisabled]}
-              onPress={handleSaveNewChecker}
-              disabled={isSaving}
-            >
-              {isSaving ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
-              ) : (
-                <Text style={styles.saveButtonText}>Save Details</Text>
-              )}
-            </TouchableOpacity>
-          </View>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Email *</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter email address"
+                    placeholderTextColor="#999"
+                    value={formData.email}
+                    onChangeText={(text) =>
+                      setFormData({ ...formData, email: text })
+                    }
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Password *</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter password"
+                    placeholderTextColor="#999"
+                    value={formData.password}
+                    onChangeText={(text) =>
+                      setFormData({ ...formData, password: text })
+                    }
+                    secureTextEntry
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Municipal Council *</Text>
+                  <TouchableOpacity
+                    style={styles.pickerButton}
+                    onPress={() => setShowCouncilPicker(true)}
+                  >
+                    <Text
+                      style={[
+                        styles.pickerButtonText,
+                        !formData.municipalCouncil && styles.pickerPlaceholder,
+                      ]}
+                    >
+                      {formData.municipalCouncil || "Select Municipal Council"}
+                    </Text>
+                    <Ionicons name="chevron-down" size={20} color="#666" />
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Checker ID (Optional)</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter checker ID"
+                    placeholderTextColor="#999"
+                    value={formData.checkerId}
+                    onChangeText={(text) =>
+                      setFormData({ ...formData, checkerId: text })
+                    }
+                  />
+                </View>
+              </ScrollView>
+
+              <TouchableOpacity
+                style={[
+                  styles.saveButton,
+                  isSaving && styles.saveButtonDisabled,
+                ]}
+                onPress={handleSaveNewChecker}
+                disabled={isSaving}
+              >
+                {isSaving ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.saveButtonText}>Save Details</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </KeyboardAvoidingView>
         </View>
       </Modal>
 
@@ -586,107 +598,115 @@ const ManageFineChecker = () => {
         onRequestClose={() => setShowEditModal(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <TouchableOpacity
-                style={styles.modalBackButton}
-                onPress={() => setShowEditModal(false)}
-              >
-                <Ionicons name="arrow-back" size={24} color="#000" />
-              </TouchableOpacity>
-              <Text style={styles.modalTitle}>Edit Fine Checker</Text>
-              <View style={styles.modalSpacer} />
-            </View>
-
-            <ScrollView style={styles.modalForm}>
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Full Name *</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter full name"
-                  placeholderTextColor="#999"
-                  value={formData.fullName}
-                  onChangeText={(text) =>
-                    setFormData({ ...formData, fullName: text })
-                  }
-                />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Email *</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter email address"
-                  placeholderTextColor="#999"
-                  value={formData.email}
-                  onChangeText={(text) =>
-                    setFormData({ ...formData, email: text })
-                  }
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>
-                  Password (Leave empty to keep current)
-                </Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter new password"
-                  placeholderTextColor="#999"
-                  value={formData.password}
-                  onChangeText={(text) =>
-                    setFormData({ ...formData, password: text })
-                  }
-                  secureTextEntry
-                />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Municipal Council *</Text>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            style={{ flex: 1 }}
+          >
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
                 <TouchableOpacity
-                  style={styles.pickerButton}
-                  onPress={() => setShowCouncilPicker(true)}
+                  style={styles.modalBackButton}
+                  onPress={() => setShowEditModal(false)}
                 >
-                  <Text
-                    style={[
-                      styles.pickerButtonText,
-                      !formData.municipalCouncil && styles.pickerPlaceholder,
-                    ]}
-                  >
-                    {formData.municipalCouncil || "Select Municipal Council"}
-                  </Text>
-                  <Ionicons name="chevron-down" size={20} color="#666" />
+                  <Ionicons name="arrow-back" size={24} color="#000" />
                 </TouchableOpacity>
+                <Text style={styles.modalTitle}>Edit Fine Checker</Text>
+                <View style={styles.modalSpacer} />
               </View>
 
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Checker ID (Optional)</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter checker ID"
-                  placeholderTextColor="#999"
-                  value={formData.checkerId}
-                  onChangeText={(text) =>
-                    setFormData({ ...formData, checkerId: text })
-                  }
-                />
-              </View>
-            </ScrollView>
+              <ScrollView style={styles.modalForm}>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Full Name *</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter full name"
+                    placeholderTextColor="#999"
+                    value={formData.fullName}
+                    onChangeText={(text) =>
+                      setFormData({ ...formData, fullName: text })
+                    }
+                  />
+                </View>
 
-            <TouchableOpacity
-              style={[styles.saveButton, isSaving && styles.saveButtonDisabled]}
-              onPress={handleSaveEdit}
-              disabled={isSaving}
-            >
-              {isSaving ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
-              ) : (
-                <Text style={styles.saveButtonText}>Save Changes</Text>
-              )}
-            </TouchableOpacity>
-          </View>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Email *</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter email address"
+                    placeholderTextColor="#999"
+                    value={formData.email}
+                    onChangeText={(text) =>
+                      setFormData({ ...formData, email: text })
+                    }
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>
+                    Password (Leave empty to keep current)
+                  </Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter new password"
+                    placeholderTextColor="#999"
+                    value={formData.password}
+                    onChangeText={(text) =>
+                      setFormData({ ...formData, password: text })
+                    }
+                    secureTextEntry
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Municipal Council *</Text>
+                  <TouchableOpacity
+                    style={styles.pickerButton}
+                    onPress={() => setShowCouncilPicker(true)}
+                  >
+                    <Text
+                      style={[
+                        styles.pickerButtonText,
+                        !formData.municipalCouncil && styles.pickerPlaceholder,
+                      ]}
+                    >
+                      {formData.municipalCouncil || "Select Municipal Council"}
+                    </Text>
+                    <Ionicons name="chevron-down" size={20} color="#666" />
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Checker ID (Optional)</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter checker ID"
+                    placeholderTextColor="#999"
+                    value={formData.checkerId}
+                    onChangeText={(text) =>
+                      setFormData({ ...formData, checkerId: text })
+                    }
+                  />
+                </View>
+              </ScrollView>
+
+              <TouchableOpacity
+                style={[
+                  styles.saveButton,
+                  isSaving && styles.saveButtonDisabled,
+                ]}
+                onPress={handleSaveEdit}
+                disabled={isSaving}
+              >
+                {isSaving ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.saveButtonText}>Save Changes</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </KeyboardAvoidingView>
         </View>
       </Modal>
 

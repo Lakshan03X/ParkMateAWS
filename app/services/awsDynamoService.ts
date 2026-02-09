@@ -12,7 +12,7 @@ class AWSDynamoService {
   // Generic method to interact with DynamoDB through API Gateway
   async query(
     tableName: string,
-    params: any
+    params: any,
   ): Promise<{ items: any[]; error?: string }> {
     try {
       const response = await axios.post(`${this.apiUrl}/query`, {
@@ -34,7 +34,7 @@ class AWSDynamoService {
 
   async getItem(
     tableName: string,
-    key: any
+    key: any,
   ): Promise<{ item?: any; error?: string }> {
     try {
       const response = await axios.post(`${this.apiUrl}/get-item`, {
@@ -55,7 +55,7 @@ class AWSDynamoService {
 
   async putItem(
     tableName: string,
-    item: any
+    item: any,
   ): Promise<{ success: boolean; error?: string }> {
     try {
       await axios.post(`${this.apiUrl}/put-item`, {
@@ -66,17 +66,16 @@ class AWSDynamoService {
       return { success: true };
     } catch (error: any) {
       console.error("DynamoDB PutItem Error:", error);
-      return {
-        success: false,
-        error: error.message || "Put item failed",
-      };
+      const errorMessage =
+        error.response?.data?.message || error.message || "Put item failed";
+      throw new Error(errorMessage);
     }
   }
 
   async updateItem(
     tableName: string,
     key: any,
-    updates: any
+    updates: any,
   ): Promise<{ success: boolean; error?: string }> {
     try {
       await axios.post(`${this.apiUrl}/update-item`, {
@@ -88,16 +87,15 @@ class AWSDynamoService {
       return { success: true };
     } catch (error: any) {
       console.error("DynamoDB UpdateItem Error:", error);
-      return {
-        success: false,
-        error: error.message || "Update item failed",
-      };
+      const errorMessage =
+        error.response?.data?.message || error.message || "Update item failed";
+      throw new Error(errorMessage);
     }
   }
 
   async deleteItem(
     tableName: string,
-    key: any
+    key: any,
   ): Promise<{ success: boolean; error?: string }> {
     try {
       await axios.delete(`${this.apiUrl}/delete-item`, {
@@ -110,16 +108,15 @@ class AWSDynamoService {
       return { success: true };
     } catch (error: any) {
       console.error("DynamoDB DeleteItem Error:", error);
-      return {
-        success: false,
-        error: error.message || "Delete item failed",
-      };
+      const errorMessage =
+        error.response?.data?.message || error.message || "Delete item failed";
+      throw new Error(errorMessage);
     }
   }
 
   async scan(
     tableName: string,
-    filters?: any
+    filters?: any,
   ): Promise<{ items: any[]; error?: string }> {
     try {
       const response = await axios.post(`${this.apiUrl}/scan`, {

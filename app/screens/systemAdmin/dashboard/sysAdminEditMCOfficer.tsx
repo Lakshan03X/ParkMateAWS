@@ -10,6 +10,8 @@ import {
   ActivityIndicator,
   Alert,
   Modal,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import {
@@ -102,95 +104,101 @@ const SysAdminEditMCOfficer = () => {
           <View style={styles.headerSpacer} />
         </View>
 
-        <ScrollView
-          style={styles.scrollView}
-          showsVerticalScrollIndicator={false}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={{ flex: 1 }}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
         >
-          <View style={styles.formContainer}>
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Full Name</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter full name"
-                placeholderTextColor="#999"
-                value={officerFormData.fullName}
-                onChangeText={(text) =>
-                  setOfficerFormData({ ...officerFormData, fullName: text })
-                }
-              />
-            </View>
+          <ScrollView
+            style={styles.scrollView}
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={styles.formContainer}>
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Full Name</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter full name"
+                  placeholderTextColor="#999"
+                  value={officerFormData.fullName}
+                  onChangeText={(text) =>
+                    setOfficerFormData({ ...officerFormData, fullName: text })
+                  }
+                />
+              </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Phone number</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter phone number"
-                placeholderTextColor="#999"
-                value={officerFormData.phoneNumber}
-                onChangeText={(text) =>
-                  setOfficerFormData({
-                    ...officerFormData,
-                    phoneNumber: text,
-                  })
-                }
-                keyboardType="phone-pad"
-              />
-            </View>
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Phone number</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter phone number"
+                  placeholderTextColor="#999"
+                  value={officerFormData.phoneNumber}
+                  onChangeText={(text) =>
+                    setOfficerFormData({
+                      ...officerFormData,
+                      phoneNumber: text,
+                    })
+                  }
+                  keyboardType="phone-pad"
+                />
+              </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Email</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter email"
-                placeholderTextColor="#999"
-                value={officerFormData.email}
-                onChangeText={(text) =>
-                  setOfficerFormData({ ...officerFormData, email: text })
-                }
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
-            </View>
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Email</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter email"
+                  placeholderTextColor="#999"
+                  value={officerFormData.email}
+                  onChangeText={(text) =>
+                    setOfficerFormData({ ...officerFormData, email: text })
+                  }
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+              </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Municipal Council Id</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter municipal council ID"
-                placeholderTextColor="#999"
-                value={officerFormData.municipalCouncilId}
-                onChangeText={(text) =>
-                  setOfficerFormData({
-                    ...officerFormData,
-                    municipalCouncilId: text,
-                  })
-                }
-              />
-            </View>
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Municipal Council Id</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter municipal council ID"
+                  placeholderTextColor="#999"
+                  value={officerFormData.municipalCouncilId}
+                  onChangeText={(text) =>
+                    setOfficerFormData({
+                      ...officerFormData,
+                      municipalCouncilId: text,
+                    })
+                  }
+                />
+              </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>
-                Password{" "}
-                <Text style={styles.optionalText}>
-                  (leave blank to keep current)
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>
+                  Password{" "}
+                  <Text style={styles.optionalText}>
+                    (leave blank to keep current)
+                  </Text>
                 </Text>
-              </Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter new password (optional)"
-                placeholderTextColor="#999"
-                value={officerFormData.password}
-                onChangeText={(text) =>
-                  setOfficerFormData({
-                    ...officerFormData,
-                    password: text,
-                  })
-                }
-                secureTextEntry
-              />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter new password (optional)"
+                  placeholderTextColor="#999"
+                  value={officerFormData.password}
+                  onChangeText={(text) =>
+                    setOfficerFormData({
+                      ...officerFormData,
+                      password: text,
+                    })
+                  }
+                  secureTextEntry
+                />
+              </View>
             </View>
-          </View>
-        </ScrollView>
+          </ScrollView>
+        </KeyboardAvoidingView>
 
         <View style={styles.buttonContainer}>
           <TouchableOpacity

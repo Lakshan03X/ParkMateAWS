@@ -11,6 +11,8 @@ import {
   ActivityIndicator,
   Alert,
   Modal,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { useRouter } from "expo-router";
 import {
@@ -41,7 +43,7 @@ const InspectorManage = () => {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [selectedInspector, setSelectedInspector] = useState<Inspector | null>(
-    null
+    null,
   );
   const [isSaving, setIsSaving] = useState(false);
 
@@ -79,7 +81,7 @@ const InspectorManage = () => {
     // Apply status filter
     if (selectedFilter !== "all") {
       filtered = filtered.filter(
-        (inspector) => inspector.status === selectedFilter
+        (inspector) => inspector.status === selectedFilter,
       );
     }
 
@@ -92,7 +94,7 @@ const InspectorManage = () => {
           (inspector.inspectorId &&
             inspector.inspectorId
               .toLowerCase()
-              .includes(searchQuery.toLowerCase()))
+              .includes(searchQuery.toLowerCase())),
       );
     }
 
@@ -433,87 +435,95 @@ const InspectorManage = () => {
         onRequestClose={() => setShowAddModal(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            style={{ flex: 1 }}
+          >
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <TouchableOpacity
+                  style={styles.modalBackButton}
+                  onPress={() => setShowAddModal(false)}
+                >
+                  <Ionicons name="arrow-back" size={24} color="#000" />
+                </TouchableOpacity>
+                <Text style={styles.modalTitle}>Add Inspector</Text>
+                <View style={styles.modalSpacer} />
+              </View>
+
+              <ScrollView style={styles.modalForm}>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Full Name</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter full name"
+                    placeholderTextColor="#999"
+                    value={formData.name}
+                    onChangeText={(text) =>
+                      setFormData({ ...formData, name: text })
+                    }
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Inspector ID</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter inspector ID"
+                    placeholderTextColor="#999"
+                    value={formData.inspectorId}
+                    onChangeText={(text) =>
+                      setFormData({ ...formData, inspectorId: text })
+                    }
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Phone number</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter phone number"
+                    placeholderTextColor="#999"
+                    value={formData.mobileNumber}
+                    onChangeText={(text) =>
+                      setFormData({ ...formData, mobileNumber: text })
+                    }
+                    keyboardType="phone-pad"
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Email</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter email address"
+                    placeholderTextColor="#999"
+                    value={formData.email}
+                    onChangeText={(text) =>
+                      setFormData({ ...formData, email: text })
+                    }
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                  />
+                </View>
+              </ScrollView>
+
               <TouchableOpacity
-                style={styles.modalBackButton}
-                onPress={() => setShowAddModal(false)}
+                style={[
+                  styles.saveButton,
+                  isSaving && styles.saveButtonDisabled,
+                ]}
+                onPress={handleSaveNewUser}
+                disabled={isSaving}
               >
-                <Ionicons name="arrow-back" size={24} color="#000" />
+                {isSaving ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.saveButtonText}>Save Details</Text>
+                )}
               </TouchableOpacity>
-              <Text style={styles.modalTitle}>Add Inspector</Text>
-              <View style={styles.modalSpacer} />
             </View>
-
-            <ScrollView style={styles.modalForm}>
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Full Name</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter full name"
-                  placeholderTextColor="#999"
-                  value={formData.name}
-                  onChangeText={(text) =>
-                    setFormData({ ...formData, name: text })
-                  }
-                />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Inspector ID</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter inspector ID"
-                  placeholderTextColor="#999"
-                  value={formData.inspectorId}
-                  onChangeText={(text) =>
-                    setFormData({ ...formData, inspectorId: text })
-                  }
-                />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Phone number</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter phone number"
-                  placeholderTextColor="#999"
-                  value={formData.mobileNumber}
-                  onChangeText={(text) =>
-                    setFormData({ ...formData, mobileNumber: text })
-                  }
-                  keyboardType="phone-pad"
-                />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Email</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter email address"
-                  placeholderTextColor="#999"
-                  value={formData.email}
-                  onChangeText={(text) =>
-                    setFormData({ ...formData, email: text })
-                  }
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                />
-              </View>
-            </ScrollView>
-
-            <TouchableOpacity
-              style={[styles.saveButton, isSaving && styles.saveButtonDisabled]}
-              onPress={handleSaveNewUser}
-              disabled={isSaving}
-            >
-              {isSaving ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
-              ) : (
-                <Text style={styles.saveButtonText}>Save Details</Text>
-              )}
-            </TouchableOpacity>
-          </View>
+          </KeyboardAvoidingView>
         </View>
       </Modal>
 
@@ -525,87 +535,95 @@ const InspectorManage = () => {
         onRequestClose={() => setShowEditModal(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            style={{ flex: 1 }}
+          >
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <TouchableOpacity
+                  style={styles.modalBackButton}
+                  onPress={() => setShowEditModal(false)}
+                >
+                  <Ionicons name="arrow-back" size={24} color="#000" />
+                </TouchableOpacity>
+                <Text style={styles.modalTitle}>Edit Inspector</Text>
+                <View style={styles.modalSpacer} />
+              </View>
+
+              <ScrollView style={styles.modalForm}>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Full Name</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter full name"
+                    placeholderTextColor="#999"
+                    value={formData.name}
+                    onChangeText={(text) =>
+                      setFormData({ ...formData, name: text })
+                    }
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Inspector ID</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter inspector ID"
+                    placeholderTextColor="#999"
+                    value={formData.inspectorId}
+                    onChangeText={(text) =>
+                      setFormData({ ...formData, inspectorId: text })
+                    }
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Phone number</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter phone number"
+                    placeholderTextColor="#999"
+                    value={formData.mobileNumber}
+                    onChangeText={(text) =>
+                      setFormData({ ...formData, mobileNumber: text })
+                    }
+                    keyboardType="phone-pad"
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Email</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter email address"
+                    placeholderTextColor="#999"
+                    value={formData.email}
+                    onChangeText={(text) =>
+                      setFormData({ ...formData, email: text })
+                    }
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                  />
+                </View>
+              </ScrollView>
+
               <TouchableOpacity
-                style={styles.modalBackButton}
-                onPress={() => setShowEditModal(false)}
+                style={[
+                  styles.saveButton,
+                  isSaving && styles.saveButtonDisabled,
+                ]}
+                onPress={handleSaveEdit}
+                disabled={isSaving}
               >
-                <Ionicons name="arrow-back" size={24} color="#000" />
+                {isSaving ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.saveButtonText}>Save Changes</Text>
+                )}
               </TouchableOpacity>
-              <Text style={styles.modalTitle}>Edit Inspector</Text>
-              <View style={styles.modalSpacer} />
             </View>
-
-            <ScrollView style={styles.modalForm}>
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Full Name</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter full name"
-                  placeholderTextColor="#999"
-                  value={formData.name}
-                  onChangeText={(text) =>
-                    setFormData({ ...formData, name: text })
-                  }
-                />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Inspector ID</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter inspector ID"
-                  placeholderTextColor="#999"
-                  value={formData.inspectorId}
-                  onChangeText={(text) =>
-                    setFormData({ ...formData, inspectorId: text })
-                  }
-                />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Phone number</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter phone number"
-                  placeholderTextColor="#999"
-                  value={formData.mobileNumber}
-                  onChangeText={(text) =>
-                    setFormData({ ...formData, mobileNumber: text })
-                  }
-                  keyboardType="phone-pad"
-                />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Email</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter email address"
-                  placeholderTextColor="#999"
-                  value={formData.email}
-                  onChangeText={(text) =>
-                    setFormData({ ...formData, email: text })
-                  }
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                />
-              </View>
-            </ScrollView>
-
-            <TouchableOpacity
-              style={[styles.saveButton, isSaving && styles.saveButtonDisabled]}
-              onPress={handleSaveEdit}
-              disabled={isSaving}
-            >
-              {isSaving ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
-              ) : (
-                <Text style={styles.saveButtonText}>Save Changes</Text>
-              )}
-            </TouchableOpacity>
-          </View>
+          </KeyboardAvoidingView>
         </View>
       </Modal>
 

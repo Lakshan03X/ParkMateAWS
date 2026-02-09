@@ -12,6 +12,7 @@ import {
   Alert,
   Modal,
   Platform,
+  KeyboardAvoidingView,
 } from "react-native";
 import { useRouter } from "expo-router";
 import {
@@ -48,7 +49,7 @@ const MCOfficerManage = () => {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [selectedOfficer, setSelectedOfficer] = useState<MCOfficer | null>(
-    null
+    null,
   );
   const [isSaving, setIsSaving] = useState(false);
 
@@ -89,10 +90,10 @@ const MCOfficerManage = () => {
 
   // Time options
   const hours = Array.from({ length: 12 }, (_, i) =>
-    String(i + 1).padStart(2, "0")
+    String(i + 1).padStart(2, "0"),
   );
   const minutes = Array.from({ length: 60 }, (_, i) =>
-    String(i).padStart(2, "0")
+    String(i).padStart(2, "0"),
   );
   const periods = ["AM", "PM"];
 
@@ -137,7 +138,7 @@ const MCOfficerManage = () => {
     // Apply status filter
     if (selectedFilter !== "all") {
       filtered = filtered.filter(
-        (officer) => officer.status === selectedFilter
+        (officer) => officer.status === selectedFilter,
       );
     }
 
@@ -147,7 +148,7 @@ const MCOfficerManage = () => {
         (officer) =>
           officer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
           officer.mobileNumber.includes(searchQuery) ||
-          officer.zone.toLowerCase().includes(searchQuery.toLowerCase())
+          officer.zone.toLowerCase().includes(searchQuery.toLowerCase()),
       );
     }
 
@@ -242,7 +243,7 @@ const MCOfficerManage = () => {
       setIsSaving(true);
 
       const selectedInspector = inspectors.find(
-        (i) => i.id === assignFormData.inspectorId
+        (i) => i.id === assignFormData.inspectorId,
       );
 
       if (selectedInspector) {
@@ -584,112 +585,120 @@ const MCOfficerManage = () => {
         onRequestClose={() => setShowAddOfficerModal(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            style={{ flex: 1 }}
+          >
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <TouchableOpacity
+                  style={styles.modalBackButton}
+                  onPress={() => setShowAddOfficerModal(false)}
+                >
+                  <Ionicons name="arrow-back" size={24} color="#000" />
+                </TouchableOpacity>
+                <Text style={styles.modalTitle}>
+                  Add Municipal{"\n"}Council Officers
+                </Text>
+                <View style={styles.modalSpacer} />
+              </View>
+
+              <ScrollView style={styles.modalForm}>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Full Name</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter full name"
+                    placeholderTextColor="#999"
+                    value={officerFormData.fullName}
+                    onChangeText={(text) =>
+                      setOfficerFormData({ ...officerFormData, fullName: text })
+                    }
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Phone number</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter phone number"
+                    placeholderTextColor="#999"
+                    value={officerFormData.phoneNumber}
+                    onChangeText={(text) =>
+                      setOfficerFormData({
+                        ...officerFormData,
+                        phoneNumber: text,
+                      })
+                    }
+                    keyboardType="phone-pad"
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Email</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter email"
+                    placeholderTextColor="#999"
+                    value={officerFormData.email}
+                    onChangeText={(text) =>
+                      setOfficerFormData({ ...officerFormData, email: text })
+                    }
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Municipal Council Id</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter municipal council ID"
+                    placeholderTextColor="#999"
+                    value={officerFormData.municipalCouncilId}
+                    onChangeText={(text) =>
+                      setOfficerFormData({
+                        ...officerFormData,
+                        municipalCouncilId: text,
+                      })
+                    }
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Password</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter password"
+                    placeholderTextColor="#999"
+                    value={officerFormData.password}
+                    onChangeText={(text) =>
+                      setOfficerFormData({
+                        ...officerFormData,
+                        password: text,
+                      })
+                    }
+                    secureTextEntry
+                  />
+                </View>
+              </ScrollView>
+
               <TouchableOpacity
-                style={styles.modalBackButton}
-                onPress={() => setShowAddOfficerModal(false)}
+                style={[
+                  styles.saveButton,
+                  isSaving && styles.saveButtonDisabled,
+                ]}
+                onPress={handleSaveOfficer}
+                disabled={isSaving}
               >
-                <Ionicons name="arrow-back" size={24} color="#000" />
+                {isSaving ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.saveButtonText}>Save Details</Text>
+                )}
               </TouchableOpacity>
-              <Text style={styles.modalTitle}>
-                Add Municipal{"\n"}Council Officers
-              </Text>
-              <View style={styles.modalSpacer} />
             </View>
-
-            <ScrollView style={styles.modalForm}>
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Full Name</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter full name"
-                  placeholderTextColor="#999"
-                  value={officerFormData.fullName}
-                  onChangeText={(text) =>
-                    setOfficerFormData({ ...officerFormData, fullName: text })
-                  }
-                />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Phone number</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter phone number"
-                  placeholderTextColor="#999"
-                  value={officerFormData.phoneNumber}
-                  onChangeText={(text) =>
-                    setOfficerFormData({
-                      ...officerFormData,
-                      phoneNumber: text,
-                    })
-                  }
-                  keyboardType="phone-pad"
-                />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Email</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter email"
-                  placeholderTextColor="#999"
-                  value={officerFormData.email}
-                  onChangeText={(text) =>
-                    setOfficerFormData({ ...officerFormData, email: text })
-                  }
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Municipal Council Id</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter municipal council ID"
-                  placeholderTextColor="#999"
-                  value={officerFormData.municipalCouncilId}
-                  onChangeText={(text) =>
-                    setOfficerFormData({
-                      ...officerFormData,
-                      municipalCouncilId: text,
-                    })
-                  }
-                />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Password</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter password"
-                  placeholderTextColor="#999"
-                  value={officerFormData.password}
-                  onChangeText={(text) =>
-                    setOfficerFormData({
-                      ...officerFormData,
-                      password: text,
-                    })
-                  }
-                  secureTextEntry
-                />
-              </View>
-            </ScrollView>
-
-            <TouchableOpacity
-              style={[styles.saveButton, isSaving && styles.saveButtonDisabled]}
-              onPress={handleSaveOfficer}
-              disabled={isSaving}
-            >
-              {isSaving ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
-              ) : (
-                <Text style={styles.saveButtonText}>Save Details</Text>
-              )}
-            </TouchableOpacity>
-          </View>
+          </KeyboardAvoidingView>
         </View>
       </Modal>
 
@@ -701,454 +710,462 @@ const MCOfficerManage = () => {
         onRequestClose={() => setShowAssignInspectorModal(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <TouchableOpacity
-                style={styles.modalBackButton}
-                onPress={() => setShowAssignInspectorModal(false)}
-              >
-                <Ionicons name="arrow-back" size={24} color="#000" />
-              </TouchableOpacity>
-              <Text style={styles.modalTitle}>Assign Parking Inspector</Text>
-              <View style={styles.modalSpacer} />
-            </View>
-
-            <ScrollView style={styles.modalForm}>
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Select the zone code</Text>
-                <View style={styles.pickerContainer}>
-                  <Picker
-                    selectedValue={assignFormData.zone}
-                    onValueChange={(value) =>
-                      setAssignFormData({ ...assignFormData, zone: value })
-                    }
-                    style={styles.picker}
-                  >
-                    <Picker.Item label="Select zone (A-E)" value="" />
-                    {zones.map((zone) => (
-                      <Picker.Item
-                        key={zone}
-                        label={`Zone ${zone}`}
-                        value={zone}
-                      />
-                    ))}
-                  </Picker>
-                </View>
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Select Parking Inspector</Text>
-                <View style={styles.pickerContainer}>
-                  <Picker
-                    selectedValue={assignFormData.inspectorId}
-                    onValueChange={(value) =>
-                      setAssignFormData({
-                        ...assignFormData,
-                        inspectorId: value,
-                      })
-                    }
-                    style={styles.picker}
-                  >
-                    <Picker.Item label="Select inspector" value="" />
-                    {inspectors.map((inspector) => (
-                      <Picker.Item
-                        key={inspector.id}
-                        label={`${inspector.name} - ${inspector.mobileNumber}`}
-                        value={inspector.id}
-                      />
-                    ))}
-                  </Picker>
-                </View>
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Schedule Start Date</Text>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            style={{ flex: 1 }}
+          >
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
                 <TouchableOpacity
-                  style={styles.timePickerButton}
-                  onPress={() => setShowStartDatePicker(!showStartDatePicker)}
+                  style={styles.modalBackButton}
+                  onPress={() => setShowAssignInspectorModal(false)}
                 >
-                  <Text style={styles.timePickerButtonText}>
-                    {formatDate(assignFormData.startDate)}
-                  </Text>
-                  <Ionicons name="calendar-outline" size={20} color="#666" />
+                  <Ionicons name="arrow-back" size={24} color="#000" />
                 </TouchableOpacity>
-                {showStartDatePicker && (
-                  <View style={styles.calendarContainer}>
-                    <View style={styles.calendarHeader}>
-                      <TouchableOpacity onPress={() => changeMonth(-1)}>
-                        <Ionicons
-                          name="chevron-back"
-                          size={24}
-                          color="#4A7C5B"
+                <Text style={styles.modalTitle}>Assign Parking Inspector</Text>
+                <View style={styles.modalSpacer} />
+              </View>
+
+              <ScrollView style={styles.modalForm}>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Select the zone code</Text>
+                  <View style={styles.pickerContainer}>
+                    <Picker
+                      selectedValue={assignFormData.zone}
+                      onValueChange={(value) =>
+                        setAssignFormData({ ...assignFormData, zone: value })
+                      }
+                      style={styles.picker}
+                    >
+                      <Picker.Item label="Select zone (A-E)" value="" />
+                      {zones.map((zone) => (
+                        <Picker.Item
+                          key={zone}
+                          label={`Zone ${zone}`}
+                          value={zone}
                         />
-                      </TouchableOpacity>
-                      <Text style={styles.calendarMonth}>
-                        {calendarDate.toLocaleDateString("en-US", {
-                          month: "long",
-                          year: "numeric",
-                        })}
-                      </Text>
-                      <TouchableOpacity onPress={() => changeMonth(1)}>
-                        <Ionicons
-                          name="chevron-forward"
-                          size={24}
-                          color="#4A7C5B"
+                      ))}
+                    </Picker>
+                  </View>
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Select Parking Inspector</Text>
+                  <View style={styles.pickerContainer}>
+                    <Picker
+                      selectedValue={assignFormData.inspectorId}
+                      onValueChange={(value) =>
+                        setAssignFormData({
+                          ...assignFormData,
+                          inspectorId: value,
+                        })
+                      }
+                      style={styles.picker}
+                    >
+                      <Picker.Item label="Select inspector" value="" />
+                      {inspectors.map((inspector) => (
+                        <Picker.Item
+                          key={inspector.id}
+                          label={`${inspector.name} - ${inspector.mobileNumber}`}
+                          value={inspector.id}
                         />
-                      </TouchableOpacity>
-                    </View>
-                    <View style={styles.calendarDaysHeader}>
-                      {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(
-                        (day) => (
-                          <Text key={day} style={styles.calendarDayName}>
-                            {day}
-                          </Text>
-                        )
-                      )}
-                    </View>
-                    <View style={styles.calendarDaysContainer}>
-                      {getCalendarDays(calendarDate).map((day, index) => (
-                        <TouchableOpacity
-                          key={index}
-                          style={[
-                            styles.calendarDay,
-                            !day && styles.calendarDayEmpty,
-                            day &&
-                              day.toDateString() ===
-                                assignFormData.startDate.toDateString() &&
-                              styles.calendarDaySelected,
-                          ]}
-                          onPress={() => {
-                            if (day) {
-                              selectStartDate(day);
-                              setShowStartDatePicker(false);
-                            }
-                          }}
-                          disabled={!day}
-                        >
-                          {day && (
-                            <Text
-                              style={[
-                                styles.calendarDayText,
+                      ))}
+                    </Picker>
+                  </View>
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Schedule Start Date</Text>
+                  <TouchableOpacity
+                    style={styles.timePickerButton}
+                    onPress={() => setShowStartDatePicker(!showStartDatePicker)}
+                  >
+                    <Text style={styles.timePickerButtonText}>
+                      {formatDate(assignFormData.startDate)}
+                    </Text>
+                    <Ionicons name="calendar-outline" size={20} color="#666" />
+                  </TouchableOpacity>
+                  {showStartDatePicker && (
+                    <View style={styles.calendarContainer}>
+                      <View style={styles.calendarHeader}>
+                        <TouchableOpacity onPress={() => changeMonth(-1)}>
+                          <Ionicons
+                            name="chevron-back"
+                            size={24}
+                            color="#4A7C5B"
+                          />
+                        </TouchableOpacity>
+                        <Text style={styles.calendarMonth}>
+                          {calendarDate.toLocaleDateString("en-US", {
+                            month: "long",
+                            year: "numeric",
+                          })}
+                        </Text>
+                        <TouchableOpacity onPress={() => changeMonth(1)}>
+                          <Ionicons
+                            name="chevron-forward"
+                            size={24}
+                            color="#4A7C5B"
+                          />
+                        </TouchableOpacity>
+                      </View>
+                      <View style={styles.calendarDaysHeader}>
+                        {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(
+                          (day) => (
+                            <Text key={day} style={styles.calendarDayName}>
+                              {day}
+                            </Text>
+                          ),
+                        )}
+                      </View>
+                      <View style={styles.calendarDaysContainer}>
+                        {getCalendarDays(calendarDate).map((day, index) => (
+                          <TouchableOpacity
+                            key={index}
+                            style={[
+                              styles.calendarDay,
+                              !day && styles.calendarDayEmpty,
+                              day &&
                                 day.toDateString() ===
                                   assignFormData.startDate.toDateString() &&
-                                  styles.calendarDayTextSelected,
-                              ]}
-                            >
-                              {day.getDate()}
-                            </Text>
-                          )}
-                        </TouchableOpacity>
-                      ))}
+                                styles.calendarDaySelected,
+                            ]}
+                            onPress={() => {
+                              if (day) {
+                                selectStartDate(day);
+                                setShowStartDatePicker(false);
+                              }
+                            }}
+                            disabled={!day}
+                          >
+                            {day && (
+                              <Text
+                                style={[
+                                  styles.calendarDayText,
+                                  day.toDateString() ===
+                                    assignFormData.startDate.toDateString() &&
+                                    styles.calendarDayTextSelected,
+                                ]}
+                              >
+                                {day.getDate()}
+                              </Text>
+                            )}
+                          </TouchableOpacity>
+                        ))}
+                      </View>
                     </View>
-                  </View>
-                )}
-              </View>
+                  )}
+                </View>
 
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Schedule End Date</Text>
-                <TouchableOpacity
-                  style={styles.timePickerButton}
-                  onPress={() => setShowEndDatePicker(!showEndDatePicker)}
-                >
-                  <Text style={styles.timePickerButtonText}>
-                    {formatDate(assignFormData.endDate)}
-                  </Text>
-                  <Ionicons name="calendar-outline" size={20} color="#666" />
-                </TouchableOpacity>
-                {showEndDatePicker && (
-                  <View style={styles.calendarContainer}>
-                    <View style={styles.calendarHeader}>
-                      <TouchableOpacity onPress={() => changeMonth(-1)}>
-                        <Ionicons
-                          name="chevron-back"
-                          size={24}
-                          color="#4A7C5B"
-                        />
-                      </TouchableOpacity>
-                      <Text style={styles.calendarMonth}>
-                        {calendarDate.toLocaleDateString("en-US", {
-                          month: "long",
-                          year: "numeric",
-                        })}
-                      </Text>
-                      <TouchableOpacity onPress={() => changeMonth(1)}>
-                        <Ionicons
-                          name="chevron-forward"
-                          size={24}
-                          color="#4A7C5B"
-                        />
-                      </TouchableOpacity>
-                    </View>
-                    <View style={styles.calendarDaysHeader}>
-                      {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(
-                        (day) => (
-                          <Text key={day} style={styles.calendarDayName}>
-                            {day}
-                          </Text>
-                        )
-                      )}
-                    </View>
-                    <View style={styles.calendarDaysContainer}>
-                      {getCalendarDays(calendarDate).map((day, index) => (
-                        <TouchableOpacity
-                          key={index}
-                          style={[
-                            styles.calendarDay,
-                            !day && styles.calendarDayEmpty,
-                            day &&
-                              day.toDateString() ===
-                                assignFormData.endDate.toDateString() &&
-                              styles.calendarDaySelected,
-                          ]}
-                          onPress={() => {
-                            if (day) {
-                              selectEndDate(day);
-                              setShowEndDatePicker(false);
-                            }
-                          }}
-                          disabled={!day}
-                        >
-                          {day && (
-                            <Text
-                              style={[
-                                styles.calendarDayText,
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Schedule End Date</Text>
+                  <TouchableOpacity
+                    style={styles.timePickerButton}
+                    onPress={() => setShowEndDatePicker(!showEndDatePicker)}
+                  >
+                    <Text style={styles.timePickerButtonText}>
+                      {formatDate(assignFormData.endDate)}
+                    </Text>
+                    <Ionicons name="calendar-outline" size={20} color="#666" />
+                  </TouchableOpacity>
+                  {showEndDatePicker && (
+                    <View style={styles.calendarContainer}>
+                      <View style={styles.calendarHeader}>
+                        <TouchableOpacity onPress={() => changeMonth(-1)}>
+                          <Ionicons
+                            name="chevron-back"
+                            size={24}
+                            color="#4A7C5B"
+                          />
+                        </TouchableOpacity>
+                        <Text style={styles.calendarMonth}>
+                          {calendarDate.toLocaleDateString("en-US", {
+                            month: "long",
+                            year: "numeric",
+                          })}
+                        </Text>
+                        <TouchableOpacity onPress={() => changeMonth(1)}>
+                          <Ionicons
+                            name="chevron-forward"
+                            size={24}
+                            color="#4A7C5B"
+                          />
+                        </TouchableOpacity>
+                      </View>
+                      <View style={styles.calendarDaysHeader}>
+                        {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(
+                          (day) => (
+                            <Text key={day} style={styles.calendarDayName}>
+                              {day}
+                            </Text>
+                          ),
+                        )}
+                      </View>
+                      <View style={styles.calendarDaysContainer}>
+                        {getCalendarDays(calendarDate).map((day, index) => (
+                          <TouchableOpacity
+                            key={index}
+                            style={[
+                              styles.calendarDay,
+                              !day && styles.calendarDayEmpty,
+                              day &&
                                 day.toDateString() ===
                                   assignFormData.endDate.toDateString() &&
-                                  styles.calendarDayTextSelected,
-                              ]}
-                            >
-                              {day.getDate()}
-                            </Text>
-                          )}
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  </View>
-                )}
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Schedule Time(Start Time)</Text>
-                <TouchableOpacity
-                  style={styles.timePickerButton}
-                  onPress={() => setShowStartTimePicker(!showStartTimePicker)}
-                >
-                  <Text style={styles.timePickerButtonText}>
-                    {getFormattedTime(
-                      assignFormData.startHour,
-                      assignFormData.startMinute,
-                      assignFormData.startPeriod
-                    )}
-                  </Text>
-                  <Ionicons name="time-outline" size={20} color="#666" />
-                </TouchableOpacity>
-                {showStartTimePicker && (
-                  <View style={styles.timePickerContainer}>
-                    <View style={styles.timePickerRow}>
-                      <View style={styles.timePickerColumn}>
-                        <Text style={styles.timePickerLabel}>Hour</Text>
-                        <View style={styles.pickerContainer}>
-                          <Picker
-                            selectedValue={assignFormData.startHour}
-                            onValueChange={(value) =>
-                              setAssignFormData({
-                                ...assignFormData,
-                                startHour: value,
-                              })
-                            }
-                            style={styles.timePicker}
+                                styles.calendarDaySelected,
+                            ]}
+                            onPress={() => {
+                              if (day) {
+                                selectEndDate(day);
+                                setShowEndDatePicker(false);
+                              }
+                            }}
+                            disabled={!day}
                           >
-                            {hours.map((hour) => (
-                              <Picker.Item
-                                key={hour}
-                                label={hour}
-                                value={hour}
-                              />
-                            ))}
-                          </Picker>
-                        </View>
-                      </View>
-                      <View style={styles.timePickerColumn}>
-                        <Text style={styles.timePickerLabel}>Minute</Text>
-                        <View style={styles.pickerContainer}>
-                          <Picker
-                            selectedValue={assignFormData.startMinute}
-                            onValueChange={(value) =>
-                              setAssignFormData({
-                                ...assignFormData,
-                                startMinute: value,
-                              })
-                            }
-                            style={styles.timePicker}
-                          >
-                            {minutes.map((minute) => (
-                              <Picker.Item
-                                key={minute}
-                                label={minute}
-                                value={minute}
-                              />
-                            ))}
-                          </Picker>
-                        </View>
-                      </View>
-                      <View style={styles.timePickerColumn}>
-                        <Text style={styles.timePickerLabel}>Period</Text>
-                        <View style={styles.pickerContainer}>
-                          <Picker
-                            selectedValue={assignFormData.startPeriod}
-                            onValueChange={(value) =>
-                              setAssignFormData({
-                                ...assignFormData,
-                                startPeriod: value,
-                              })
-                            }
-                            style={styles.timePicker}
-                          >
-                            {periods.map((period) => (
-                              <Picker.Item
-                                key={period}
-                                label={period}
-                                value={period}
-                              />
-                            ))}
-                          </Picker>
-                        </View>
+                            {day && (
+                              <Text
+                                style={[
+                                  styles.calendarDayText,
+                                  day.toDateString() ===
+                                    assignFormData.endDate.toDateString() &&
+                                    styles.calendarDayTextSelected,
+                                ]}
+                              >
+                                {day.getDate()}
+                              </Text>
+                            )}
+                          </TouchableOpacity>
+                        ))}
                       </View>
                     </View>
-                  </View>
-                )}
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Schedule Time(End Time)</Text>
-                <TouchableOpacity
-                  style={styles.timePickerButton}
-                  onPress={() => setShowEndTimePicker(!showEndTimePicker)}
-                >
-                  <Text style={styles.timePickerButtonText}>
-                    {getFormattedTime(
-                      assignFormData.endHour,
-                      assignFormData.endMinute,
-                      assignFormData.endPeriod
-                    )}
-                  </Text>
-                  <Ionicons name="time-outline" size={20} color="#666" />
-                </TouchableOpacity>
-                {showEndTimePicker && (
-                  <View style={styles.timePickerContainer}>
-                    <View style={styles.timePickerRow}>
-                      <View style={styles.timePickerColumn}>
-                        <Text style={styles.timePickerLabel}>Hour</Text>
-                        <View style={styles.pickerContainer}>
-                          <Picker
-                            selectedValue={assignFormData.endHour}
-                            onValueChange={(value) =>
-                              setAssignFormData({
-                                ...assignFormData,
-                                endHour: value,
-                              })
-                            }
-                            style={styles.timePicker}
-                          >
-                            {hours.map((hour) => (
-                              <Picker.Item
-                                key={hour}
-                                label={hour}
-                                value={hour}
-                              />
-                            ))}
-                          </Picker>
-                        </View>
-                      </View>
-                      <View style={styles.timePickerColumn}>
-                        <Text style={styles.timePickerLabel}>Minute</Text>
-                        <View style={styles.pickerContainer}>
-                          <Picker
-                            selectedValue={assignFormData.endMinute}
-                            onValueChange={(value) =>
-                              setAssignFormData({
-                                ...assignFormData,
-                                endMinute: value,
-                              })
-                            }
-                            style={styles.timePicker}
-                          >
-                            {minutes.map((minute) => (
-                              <Picker.Item
-                                key={minute}
-                                label={minute}
-                                value={minute}
-                              />
-                            ))}
-                          </Picker>
-                        </View>
-                      </View>
-                      <View style={styles.timePickerColumn}>
-                        <Text style={styles.timePickerLabel}>Period</Text>
-                        <View style={styles.pickerContainer}>
-                          <Picker
-                            selectedValue={assignFormData.endPeriod}
-                            onValueChange={(value) =>
-                              setAssignFormData({
-                                ...assignFormData,
-                                endPeriod: value,
-                              })
-                            }
-                            style={styles.timePicker}
-                          >
-                            {periods.map((period) => (
-                              <Picker.Item
-                                key={period}
-                                label={period}
-                                value={period}
-                              />
-                            ))}
-                          </Picker>
-                        </View>
-                      </View>
-                    </View>
-                  </View>
-                )}
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Registered Municipal Council</Text>
-                <View style={styles.pickerContainer}>
-                  <Picker
-                    selectedValue={assignFormData.municipalCouncil}
-                    onValueChange={(value) =>
-                      setAssignFormData({
-                        ...assignFormData,
-                        municipalCouncil: value,
-                      })
-                    }
-                    style={styles.picker}
-                  >
-                    <Picker.Item label="Select municipal council" value="" />
-                    {municipalCouncils.map((council) => (
-                      <Picker.Item
-                        key={council}
-                        label={council}
-                        value={council}
-                      />
-                    ))}
-                  </Picker>
+                  )}
                 </View>
-              </View>
-            </ScrollView>
 
-            <TouchableOpacity
-              style={[styles.saveButton, isSaving && styles.saveButtonDisabled]}
-              onPress={handleSaveAssignment}
-              disabled={isSaving}
-            >
-              {isSaving ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
-              ) : (
-                <Text style={styles.saveButtonText}>Assign</Text>
-              )}
-            </TouchableOpacity>
-          </View>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Schedule Time(Start Time)</Text>
+                  <TouchableOpacity
+                    style={styles.timePickerButton}
+                    onPress={() => setShowStartTimePicker(!showStartTimePicker)}
+                  >
+                    <Text style={styles.timePickerButtonText}>
+                      {getFormattedTime(
+                        assignFormData.startHour,
+                        assignFormData.startMinute,
+                        assignFormData.startPeriod,
+                      )}
+                    </Text>
+                    <Ionicons name="time-outline" size={20} color="#666" />
+                  </TouchableOpacity>
+                  {showStartTimePicker && (
+                    <View style={styles.timePickerContainer}>
+                      <View style={styles.timePickerRow}>
+                        <View style={styles.timePickerColumn}>
+                          <Text style={styles.timePickerLabel}>Hour</Text>
+                          <View style={styles.pickerContainer}>
+                            <Picker
+                              selectedValue={assignFormData.startHour}
+                              onValueChange={(value) =>
+                                setAssignFormData({
+                                  ...assignFormData,
+                                  startHour: value,
+                                })
+                              }
+                              style={styles.timePicker}
+                            >
+                              {hours.map((hour) => (
+                                <Picker.Item
+                                  key={hour}
+                                  label={hour}
+                                  value={hour}
+                                />
+                              ))}
+                            </Picker>
+                          </View>
+                        </View>
+                        <View style={styles.timePickerColumn}>
+                          <Text style={styles.timePickerLabel}>Minute</Text>
+                          <View style={styles.pickerContainer}>
+                            <Picker
+                              selectedValue={assignFormData.startMinute}
+                              onValueChange={(value) =>
+                                setAssignFormData({
+                                  ...assignFormData,
+                                  startMinute: value,
+                                })
+                              }
+                              style={styles.timePicker}
+                            >
+                              {minutes.map((minute) => (
+                                <Picker.Item
+                                  key={minute}
+                                  label={minute}
+                                  value={minute}
+                                />
+                              ))}
+                            </Picker>
+                          </View>
+                        </View>
+                        <View style={styles.timePickerColumn}>
+                          <Text style={styles.timePickerLabel}>Period</Text>
+                          <View style={styles.pickerContainer}>
+                            <Picker
+                              selectedValue={assignFormData.startPeriod}
+                              onValueChange={(value) =>
+                                setAssignFormData({
+                                  ...assignFormData,
+                                  startPeriod: value,
+                                })
+                              }
+                              style={styles.timePicker}
+                            >
+                              {periods.map((period) => (
+                                <Picker.Item
+                                  key={period}
+                                  label={period}
+                                  value={period}
+                                />
+                              ))}
+                            </Picker>
+                          </View>
+                        </View>
+                      </View>
+                    </View>
+                  )}
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Schedule Time(End Time)</Text>
+                  <TouchableOpacity
+                    style={styles.timePickerButton}
+                    onPress={() => setShowEndTimePicker(!showEndTimePicker)}
+                  >
+                    <Text style={styles.timePickerButtonText}>
+                      {getFormattedTime(
+                        assignFormData.endHour,
+                        assignFormData.endMinute,
+                        assignFormData.endPeriod,
+                      )}
+                    </Text>
+                    <Ionicons name="time-outline" size={20} color="#666" />
+                  </TouchableOpacity>
+                  {showEndTimePicker && (
+                    <View style={styles.timePickerContainer}>
+                      <View style={styles.timePickerRow}>
+                        <View style={styles.timePickerColumn}>
+                          <Text style={styles.timePickerLabel}>Hour</Text>
+                          <View style={styles.pickerContainer}>
+                            <Picker
+                              selectedValue={assignFormData.endHour}
+                              onValueChange={(value) =>
+                                setAssignFormData({
+                                  ...assignFormData,
+                                  endHour: value,
+                                })
+                              }
+                              style={styles.timePicker}
+                            >
+                              {hours.map((hour) => (
+                                <Picker.Item
+                                  key={hour}
+                                  label={hour}
+                                  value={hour}
+                                />
+                              ))}
+                            </Picker>
+                          </View>
+                        </View>
+                        <View style={styles.timePickerColumn}>
+                          <Text style={styles.timePickerLabel}>Minute</Text>
+                          <View style={styles.pickerContainer}>
+                            <Picker
+                              selectedValue={assignFormData.endMinute}
+                              onValueChange={(value) =>
+                                setAssignFormData({
+                                  ...assignFormData,
+                                  endMinute: value,
+                                })
+                              }
+                              style={styles.timePicker}
+                            >
+                              {minutes.map((minute) => (
+                                <Picker.Item
+                                  key={minute}
+                                  label={minute}
+                                  value={minute}
+                                />
+                              ))}
+                            </Picker>
+                          </View>
+                        </View>
+                        <View style={styles.timePickerColumn}>
+                          <Text style={styles.timePickerLabel}>Period</Text>
+                          <View style={styles.pickerContainer}>
+                            <Picker
+                              selectedValue={assignFormData.endPeriod}
+                              onValueChange={(value) =>
+                                setAssignFormData({
+                                  ...assignFormData,
+                                  endPeriod: value,
+                                })
+                              }
+                              style={styles.timePicker}
+                            >
+                              {periods.map((period) => (
+                                <Picker.Item
+                                  key={period}
+                                  label={period}
+                                  value={period}
+                                />
+                              ))}
+                            </Picker>
+                          </View>
+                        </View>
+                      </View>
+                    </View>
+                  )}
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Registered Municipal Council</Text>
+                  <View style={styles.pickerContainer}>
+                    <Picker
+                      selectedValue={assignFormData.municipalCouncil}
+                      onValueChange={(value) =>
+                        setAssignFormData({
+                          ...assignFormData,
+                          municipalCouncil: value,
+                        })
+                      }
+                      style={styles.picker}
+                    >
+                      <Picker.Item label="Select municipal council" value="" />
+                      {municipalCouncils.map((council) => (
+                        <Picker.Item
+                          key={council}
+                          label={council}
+                          value={council}
+                        />
+                      ))}
+                    </Picker>
+                  </View>
+                </View>
+              </ScrollView>
+
+              <TouchableOpacity
+                style={[
+                  styles.saveButton,
+                  isSaving && styles.saveButtonDisabled,
+                ]}
+                onPress={handleSaveAssignment}
+                disabled={isSaving}
+              >
+                {isSaving ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.saveButtonText}>Assign</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </KeyboardAvoidingView>
         </View>
       </Modal>
 

@@ -29,7 +29,12 @@ class FineCheckerService {
         throw new Error(result.error);
       }
 
-      const checkers: FineChecker[] = result.items.map((item: any) => ({
+      // Filter only fine checkers (userType === 'fine_checker')
+      const checkerItems = result.items.filter(
+        (item: any) => item.userType === "fine_checker",
+      );
+
+      const checkers: FineChecker[] = checkerItems.map((item: any) => ({
         id:
           item.id ||
           item.checkerId ||
@@ -66,7 +71,7 @@ class FineCheckerService {
   async getFineCheckerById(checkerId: string): Promise<FineChecker | null> {
     try {
       const result = await awsDynamoService.getItem(COLLECTION_NAME, {
-        checkerId,
+        userId: checkerId,
       });
 
       if (!result.item) {
@@ -106,22 +111,17 @@ class FineCheckerService {
 
       const newChecker = {
         ...checkerData,
+        userId: checkerId, // DynamoDB partition key
         id: checkerId,
         checkerId,
+        userType: "fine_checker", // Identify as fine checker
         status: checkerData.status || "offDuty",
         registeredDate: new Date().toISOString().split("T")[0],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
 
-      const result = await awsDynamoService.putItem(
-        COLLECTION_NAME,
-        newChecker,
-      );
-
-      if (!result.success) {
-        throw new Error(result.error || "Failed to add fine checker");
-      }
+      await awsDynamoService.putItem(COLLECTION_NAME, newChecker);
 
       return {
         id: checkerId,
@@ -141,18 +141,14 @@ class FineCheckerService {
     updates: Partial<FineChecker>,
   ): Promise<void> {
     try {
-      const result = await awsDynamoService.updateItem(
+      await awsDynamoService.updateItem(
         COLLECTION_NAME,
-        { checkerId },
+        { userId: checkerId },
         {
           ...updates,
           updatedAt: new Date().toISOString(),
         },
       );
-
-      if (!result.success) {
-        throw new Error(result.error || "Failed to update fine checker");
-      }
     } catch (error) {
       console.error("Error updating fine checker:", error);
       throw new Error("Failed to update fine checker");
@@ -164,13 +160,9 @@ class FineCheckerService {
    */
   async deleteFineChecker(checkerId: string): Promise<void> {
     try {
-      const result = await awsDynamoService.deleteItem(COLLECTION_NAME, {
-        checkerId,
+      await awsDynamoService.deleteItem(COLLECTION_NAME, {
+        userId: checkerId,
       });
-
-      if (!result.success) {
-        throw new Error(result.error || "Failed to delete fine checker");
-      }
     } catch (error) {
       console.error("Error deleting fine checker:", error);
       throw new Error("Failed to delete fine checker");
@@ -185,18 +177,14 @@ class FineCheckerService {
     status: "onDuty" | "offDuty",
   ): Promise<{ status: string; message: string }> {
     try {
-      const result = await awsDynamoService.updateItem(
+      await awsDynamoService.updateItem(
         COLLECTION_NAME,
-        { checkerId },
+        { userId: checkerId },
         {
           status: status,
           updatedAt: new Date().toISOString(),
         },
       );
-
-      if (!result.success) {
-        throw new Error(result.error || "Failed to update status");
-      }
 
       console.log(`✅ Fine checker status updated to ${status}`);
       return {
@@ -227,7 +215,14 @@ class FineCheckerService {
         throw new Error(result.error);
       }
 
-      const checkers = result.items.map((item: any) => ({
+      // Filter by userType and municipalCouncil
+      const filteredItems = result.items.filter(
+        (item: any) =>
+          item.userType === "fine_checker" &&
+          item.municipalCouncil === municipalCouncil,
+      );
+
+      const checkers = filteredItems.map((item: any) => ({
         id:
           item.id ||
           item.checkerId ||
@@ -271,7 +266,13 @@ class FineCheckerService {
         throw new Error(result.error);
       }
 
-      const checkers = result.items.map((item: any) => ({
+      // Filter by userType and status
+      const filteredItems = result.items.filter(
+        (item: any) =>
+          item.userType === "fine_checker" && item.status === status,
+      );
+
+      const checkers = filteredItems.map((item: any) => ({
         id:
           item.id ||
           item.checkerId ||
@@ -312,7 +313,7 @@ class FineCheckerService {
     try {
       console.log("🔍 Verifying fine checker login:", { email });
 
-      const result = await awsDynamoService.scan(COLLECTION_NAME, { email });
+      const result = await awsDynamoService.scan(COLLECTION_NAME);
 
       if (result.error || result.items.length === 0) {
         console.log("❌ Email not found");
@@ -322,7 +323,20 @@ class FineCheckerService {
         };
       }
 
-      const matchedItem = result.items.find(
+      // Filter by userType and email
+      const checkers = result.items.filter(
+        (item: any) => item.userType === "fine_checker" && item.email === email,
+      );
+
+      if (checkers.length === 0) {
+        console.log("❌ Email not found");
+        return {
+          status: "error",
+          message: "Email not found. Please check your credentials.",
+        };
+      }
+
+      const matchedItem = checkers.find(
         (item: any) => item.password === password,
       );
 

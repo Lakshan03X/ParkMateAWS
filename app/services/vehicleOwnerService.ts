@@ -12,7 +12,7 @@ export interface VehicleOwner {
   updatedAt?: any;
 }
 
-const COLLECTION_NAME = "parkmate-vehicles";
+const COLLECTION_NAME = "parkmate-users";
 
 class VehicleOwnerService {
   /**
@@ -22,7 +22,12 @@ class VehicleOwnerService {
     try {
       const result = await awsDynamoService.scan(COLLECTION_NAME);
 
-      const owners: VehicleOwner[] = (result.items || []).map((data: any) => ({
+      // Filter only vehicle owners (userType === 'vehicle_owner')
+      const ownerItems = (result.items || []).filter(
+        (item: any) => item.userType === "vehicle_owner",
+      );
+
+      const owners: VehicleOwner[] = ownerItems.map((data: any) => ({
         id: data.id || data.vehicleOwnerId,
         name: data.name,
         mobileNumber: data.mobileNumber,
@@ -56,8 +61,10 @@ class VehicleOwnerService {
       const id = `VO_${Date.now()}_${Math.random().toString(36).substring(7)}`;
 
       const newOwner = {
+        userId: id, // DynamoDB partition key
         id,
         ...ownerData,
+        userType: "vehicle_owner", // Identify as vehicle owner
         status: ownerData.status || "online",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -82,7 +89,7 @@ class VehicleOwnerService {
     try {
       await awsDynamoService.updateItem(
         COLLECTION_NAME,
-        { id: ownerId },
+        { userId: ownerId },
         {
           ...updates,
           updatedAt: new Date().toISOString(),
@@ -99,7 +106,7 @@ class VehicleOwnerService {
    */
   async deleteOwner(ownerId: string): Promise<void> {
     try {
-      await awsDynamoService.deleteItem(COLLECTION_NAME, { id: ownerId });
+      await awsDynamoService.deleteItem(COLLECTION_NAME, { userId: ownerId });
     } catch (error) {
       console.error("Error deleting vehicle owner:", error);
       throw new Error("Failed to delete vehicle owner");

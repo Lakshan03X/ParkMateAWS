@@ -30,7 +30,12 @@ class InspectorService {
         throw new Error(result.error);
       }
 
-      const inspectors: Inspector[] = result.items.map((item: any) => ({
+      // Filter only inspectors (userType === 'inspector')
+      const inspectorItems = result.items.filter(
+        (item: any) => item.userType === "inspector",
+      );
+
+      const inspectors: Inspector[] = inspectorItems.map((item: any) => ({
         id:
           item.id ||
           item.inspectorId ||
@@ -77,7 +82,7 @@ class InspectorService {
       });
 
       const result = await awsDynamoService.getItem(COLLECTION_NAME, {
-        inspectorId: employeeId,
+        userId: employeeId,
       });
 
       if (!result.item) {
@@ -147,18 +152,14 @@ class InspectorService {
     status: "online" | "offline",
   ): Promise<{ status: string; message: string }> {
     try {
-      const result = await awsDynamoService.updateItem(
+      await awsDynamoService.updateItem(
         COLLECTION_NAME,
-        { inspectorId },
+        { userId: inspectorId },
         {
           status: status,
           updatedAt: new Date().toISOString(),
         },
       );
-
-      if (!result.success) {
-        throw new Error(result.error || "Failed to update status");
-      }
 
       console.log(`✅ Inspector status updated to ${status}`);
       return {
@@ -180,7 +181,7 @@ class InspectorService {
   async getInspectorById(inspectorId: string): Promise<Inspector | null> {
     try {
       const result = await awsDynamoService.getItem(COLLECTION_NAME, {
-        inspectorId,
+        userId: inspectorId,
       });
 
       if (!result.item) {
@@ -225,22 +226,17 @@ class InspectorService {
 
       const newInspector = {
         ...inspectorData,
+        userId: inspectorId, // DynamoDB partition key
         id: inspectorId,
         inspectorId,
+        userType: "inspector", // Identify as inspector
         status: inspectorData.status || "pending",
         isAssigned: inspectorData.isAssigned || false,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
 
-      const result = await awsDynamoService.putItem(
-        COLLECTION_NAME,
-        newInspector,
-      );
-
-      if (!result.success) {
-        throw new Error(result.error || "Failed to add inspector");
-      }
+      await awsDynamoService.putItem(COLLECTION_NAME, newInspector);
 
       console.log("✅ Inspector added successfully:", inspectorId);
       return {
@@ -265,18 +261,14 @@ class InspectorService {
     updates: Partial<Inspector>,
   ): Promise<{ status: string; message: string }> {
     try {
-      const result = await awsDynamoService.updateItem(
+      await awsDynamoService.updateItem(
         COLLECTION_NAME,
-        { inspectorId },
+        { userId: inspectorId },
         {
           ...updates,
           updatedAt: new Date().toISOString(),
         },
       );
-
-      if (!result.success) {
-        throw new Error(result.error || "Failed to update inspector");
-      }
 
       console.log("✅ Inspector updated successfully");
       return {
@@ -299,13 +291,9 @@ class InspectorService {
     inspectorId: string,
   ): Promise<{ status: string; message: string }> {
     try {
-      const result = await awsDynamoService.deleteItem(COLLECTION_NAME, {
-        inspectorId,
+      await awsDynamoService.deleteItem(COLLECTION_NAME, {
+        userId: inspectorId,
       });
-
-      if (!result.success) {
-        throw new Error(result.error || "Failed to delete inspector");
-      }
 
       console.log("✅ Inspector deleted successfully");
       return {
@@ -329,19 +317,15 @@ class InspectorService {
     zoneId: string,
   ): Promise<{ status: string; message: string }> {
     try {
-      const result = await awsDynamoService.updateItem(
+      await awsDynamoService.updateItem(
         COLLECTION_NAME,
-        { inspectorId },
+        { userId: inspectorId },
         {
           assignedZone: zoneId,
           isAssigned: true,
           updatedAt: new Date().toISOString(),
         },
       );
-
-      if (!result.success) {
-        throw new Error(result.error || "Failed to assign zone");
-      }
 
       console.log("✅ Zone assigned successfully");
       return {

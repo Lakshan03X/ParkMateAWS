@@ -78,6 +78,25 @@ const ConfigureZone = () => {
     totalParkingSpots: "",
   });
 
+  // Time picker states
+  const [startHour, setStartHour] = useState("08");
+  const [startMinute, setStartMinute] = useState("00");
+  const [startPeriod, setStartPeriod] = useState("AM");
+  const [endHour, setEndHour] = useState("06");
+  const [endMinute, setEndMinute] = useState("00");
+  const [endPeriod, setEndPeriod] = useState("PM");
+  const [showStartTimePicker, setShowStartTimePicker] = useState(false);
+  const [showEndTimePicker, setShowEndTimePicker] = useState(false);
+
+  // Time options
+  const hours = Array.from({ length: 12 }, (_, i) =>
+    String(i + 1).padStart(2, "0"),
+  );
+  const minutes = Array.from({ length: 60 }, (_, i) =>
+    String(i).padStart(2, "0"),
+  );
+  const periods = ["AM", "PM"];
+
   // Load parking zones from AWS DynamoDB
   useEffect(() => {
     loadParkingZones();
@@ -108,7 +127,7 @@ const ConfigureZone = () => {
       filtered = filtered.filter((zone) => zone.status === "inactive");
     } else if (selectedFilter === "issues") {
       filtered = filtered.filter(
-        (zone) => zone.status === "inactive" && zone.inactiveReason
+        (zone) => zone.status === "inactive" && zone.inactiveReason,
       );
     }
 
@@ -120,7 +139,7 @@ const ConfigureZone = () => {
             .toLowerCase()
             .includes(searchQuery.toLowerCase()) ||
           zone.zoneCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          zone.location.toLowerCase().includes(searchQuery.toLowerCase())
+          zone.location.toLowerCase().includes(searchQuery.toLowerCase()),
       );
     }
 
@@ -139,6 +158,22 @@ const ConfigureZone = () => {
       totalParkingSpots: "",
     });
     setTempCoordinates(null);
+    setStartHour("08");
+    setStartMinute("00");
+    setStartPeriod("AM");
+    setEndHour("06");
+    setEndMinute("00");
+    setEndPeriod("PM");
+    setShowStartTimePicker(false);
+    setShowEndTimePicker(false);
+  };
+
+  const getFormattedTime = (hour: string, minute: string, period: string) => {
+    return `${hour}:${minute} ${period}`;
+  };
+
+  const getActiveHoursString = () => {
+    return `${getFormattedTime(startHour, startMinute, startPeriod)} - ${getFormattedTime(endHour, endMinute, endPeriod)}`;
   };
 
   const handleAddNewZone = () => {
@@ -152,7 +187,6 @@ const ConfigureZone = () => {
       !formData.zoneCode.trim() ||
       !formData.location.trim() ||
       !formData.parkingRate.trim() ||
-      !formData.activeHours.trim() ||
       !formData.totalParkingSpots.trim()
     ) {
       Alert.alert("Validation Error", "Please fill in all required fields");
@@ -174,7 +208,7 @@ const ConfigureZone = () => {
         latitude: formData.latitude,
         longitude: formData.longitude,
         parkingRate: formData.parkingRate,
-        activeHours: formData.activeHours,
+        activeHours: getActiveHoursString(),
         totalParkingSpots: formData.totalParkingSpots,
         status: "active",
       });
@@ -205,6 +239,22 @@ const ConfigureZone = () => {
       activeHours: zone.activeHours,
       totalParkingSpots: zone.totalParkingSpots,
     });
+
+    // Parse existing active hours if available
+    if (zone.activeHours) {
+      const match = zone.activeHours.match(
+        /(\d{1,2}):(\d{2})\s*(AM|PM)\s*-\s*(\d{1,2}):(\d{2})\s*(AM|PM)/i,
+      );
+      if (match) {
+        setStartHour(match[1].padStart(2, "0"));
+        setStartMinute(match[2]);
+        setStartPeriod(match[3].toUpperCase());
+        setEndHour(match[4].padStart(2, "0"));
+        setEndMinute(match[5]);
+        setEndPeriod(match[6].toUpperCase());
+      }
+    }
+
     setShowEditModal(true);
   };
 
@@ -214,7 +264,6 @@ const ConfigureZone = () => {
       !formData.zoneCode.trim() ||
       !formData.location.trim() ||
       !formData.parkingRate.trim() ||
-      !formData.activeHours.trim() ||
       !formData.totalParkingSpots.trim()
     ) {
       Alert.alert("Validation Error", "Please fill in all required fields");
@@ -238,7 +287,7 @@ const ConfigureZone = () => {
         latitude: formData.latitude,
         longitude: formData.longitude,
         parkingRate: formData.parkingRate,
-        activeHours: formData.activeHours,
+        activeHours: getActiveHoursString(),
         totalParkingSpots: formData.totalParkingSpots,
       });
 
@@ -329,14 +378,14 @@ const ConfigureZone = () => {
   };
 
   const handleConfirmStatusChange = async (
-    newStatus: "active" | "inactive"
+    newStatus: "active" | "inactive",
   ) => {
     if (!selectedZone) return;
 
     if (newStatus === "inactive" && !inactiveReason.trim()) {
       Alert.alert(
         "Validation Error",
-        "Please select a reason for inactivation"
+        "Please select a reason for inactivation",
       );
       return;
     }
@@ -347,7 +396,7 @@ const ConfigureZone = () => {
       await parkingZoneService.updateZoneStatus(
         selectedZone.id,
         newStatus,
-        newStatus === "inactive" ? inactiveReason : undefined
+        newStatus === "inactive" ? inactiveReason : undefined,
       );
 
       await loadParkingZones();
@@ -356,7 +405,7 @@ const ConfigureZone = () => {
       setSuccessMessage(
         `Successfully ${
           newStatus === "active" ? "activated" : "inactivated"
-        } the parking zone`
+        } the parking zone`,
       );
       setShowSuccessModal(true);
       setSelectedZone(null);
@@ -697,7 +746,7 @@ const ConfigureZone = () => {
                     <Text style={styles.mapPickerText}>
                       {formData.latitude && formData.longitude
                         ? `Selected: ${formData.latitude.toFixed(
-                            4
+                            4,
                           )}, ${formData.longitude.toFixed(4)}`
                         : "Tap to select location on map"}
                     </Text>
@@ -726,15 +775,158 @@ const ConfigureZone = () => {
 
                 <View style={styles.inputGroup}>
                   <Text style={styles.label}>Active Hours</Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="e.g., 8:00 AM - 6:00 PM"
-                    placeholderTextColor="#999"
-                    value={formData.activeHours}
-                    onChangeText={(text) =>
-                      setFormData({ ...formData, activeHours: text })
-                    }
-                  />
+
+                  {/* Start Time */}
+                  <Text style={styles.subLabel}>Start Time</Text>
+                  <TouchableOpacity
+                    style={styles.timePickerButton}
+                    onPress={() => setShowStartTimePicker(!showStartTimePicker)}
+                  >
+                    <Text style={styles.timePickerButtonText}>
+                      {getFormattedTime(startHour, startMinute, startPeriod)}
+                    </Text>
+                    <Ionicons name="time-outline" size={20} color="#666" />
+                  </TouchableOpacity>
+
+                  {showStartTimePicker && (
+                    <View style={styles.timePickerContainer}>
+                      <View style={styles.timePickerRow}>
+                        <View style={styles.timePickerColumn}>
+                          <Text style={styles.timePickerLabel}>Hour</Text>
+                          <View style={styles.pickerWrapper}>
+                            <Picker
+                              selectedValue={startHour}
+                              onValueChange={(value) => setStartHour(value)}
+                              style={styles.timePicker}
+                            >
+                              {hours.map((hour) => (
+                                <Picker.Item
+                                  key={hour}
+                                  label={hour}
+                                  value={hour}
+                                />
+                              ))}
+                            </Picker>
+                          </View>
+                        </View>
+                        <View style={styles.timePickerColumn}>
+                          <Text style={styles.timePickerLabel}>Minute</Text>
+                          <View style={styles.pickerWrapper}>
+                            <Picker
+                              selectedValue={startMinute}
+                              onValueChange={(value) => setStartMinute(value)}
+                              style={styles.timePicker}
+                            >
+                              {minutes.map((minute) => (
+                                <Picker.Item
+                                  key={minute}
+                                  label={minute}
+                                  value={minute}
+                                />
+                              ))}
+                            </Picker>
+                          </View>
+                        </View>
+                        <View style={styles.timePickerColumn}>
+                          <Text style={styles.timePickerLabel}>Period</Text>
+                          <View style={styles.pickerWrapper}>
+                            <Picker
+                              selectedValue={startPeriod}
+                              onValueChange={(value) => setStartPeriod(value)}
+                              style={styles.timePicker}
+                            >
+                              {periods.map((period) => (
+                                <Picker.Item
+                                  key={period}
+                                  label={period}
+                                  value={period}
+                                />
+                              ))}
+                            </Picker>
+                          </View>
+                        </View>
+                      </View>
+                    </View>
+                  )}
+
+                  {/* End Time */}
+                  <Text style={[styles.subLabel, { marginTop: 12 }]}>
+                    End Time
+                  </Text>
+                  <TouchableOpacity
+                    style={styles.timePickerButton}
+                    onPress={() => setShowEndTimePicker(!showEndTimePicker)}
+                  >
+                    <Text style={styles.timePickerButtonText}>
+                      {getFormattedTime(endHour, endMinute, endPeriod)}
+                    </Text>
+                    <Ionicons name="time-outline" size={20} color="#666" />
+                  </TouchableOpacity>
+
+                  {showEndTimePicker && (
+                    <View style={styles.timePickerContainer}>
+                      <View style={styles.timePickerRow}>
+                        <View style={styles.timePickerColumn}>
+                          <Text style={styles.timePickerLabel}>Hour</Text>
+                          <View style={styles.pickerWrapper}>
+                            <Picker
+                              selectedValue={endHour}
+                              onValueChange={(value) => setEndHour(value)}
+                              style={styles.timePicker}
+                            >
+                              {hours.map((hour) => (
+                                <Picker.Item
+                                  key={hour}
+                                  label={hour}
+                                  value={hour}
+                                />
+                              ))}
+                            </Picker>
+                          </View>
+                        </View>
+                        <View style={styles.timePickerColumn}>
+                          <Text style={styles.timePickerLabel}>Minute</Text>
+                          <View style={styles.pickerWrapper}>
+                            <Picker
+                              selectedValue={endMinute}
+                              onValueChange={(value) => setEndMinute(value)}
+                              style={styles.timePicker}
+                            >
+                              {minutes.map((minute) => (
+                                <Picker.Item
+                                  key={minute}
+                                  label={minute}
+                                  value={minute}
+                                />
+                              ))}
+                            </Picker>
+                          </View>
+                        </View>
+                        <View style={styles.timePickerColumn}>
+                          <Text style={styles.timePickerLabel}>Period</Text>
+                          <View style={styles.pickerWrapper}>
+                            <Picker
+                              selectedValue={endPeriod}
+                              onValueChange={(value) => setEndPeriod(value)}
+                              style={styles.timePicker}
+                            >
+                              {periods.map((period) => (
+                                <Picker.Item
+                                  key={period}
+                                  label={period}
+                                  value={period}
+                                />
+                              ))}
+                            </Picker>
+                          </View>
+                        </View>
+                      </View>
+                    </View>
+                  )}
+
+                  <Text style={styles.timeHintText}>
+                    Selected: {getActiveHoursString()}
+                  </Text>
                 </View>
 
                 <View style={styles.inputGroup}>
@@ -865,7 +1057,7 @@ const ConfigureZone = () => {
                     <Text style={styles.mapPickerText}>
                       {formData.latitude && formData.longitude
                         ? `Selected: ${formData.latitude.toFixed(
-                            4
+                            4,
                           )}, ${formData.longitude.toFixed(4)}`
                         : "Tap to select location on map"}
                     </Text>
@@ -894,15 +1086,158 @@ const ConfigureZone = () => {
 
                 <View style={styles.inputGroup}>
                   <Text style={styles.label}>Active Hours</Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="e.g., 8:00 AM - 6:00 PM"
-                    placeholderTextColor="#999"
-                    value={formData.activeHours}
-                    onChangeText={(text) =>
-                      setFormData({ ...formData, activeHours: text })
-                    }
-                  />
+
+                  {/* Start Time */}
+                  <Text style={styles.subLabel}>Start Time</Text>
+                  <TouchableOpacity
+                    style={styles.timePickerButton}
+                    onPress={() => setShowStartTimePicker(!showStartTimePicker)}
+                  >
+                    <Text style={styles.timePickerButtonText}>
+                      {getFormattedTime(startHour, startMinute, startPeriod)}
+                    </Text>
+                    <Ionicons name="time-outline" size={20} color="#666" />
+                  </TouchableOpacity>
+
+                  {showStartTimePicker && (
+                    <View style={styles.timePickerContainer}>
+                      <View style={styles.timePickerRow}>
+                        <View style={styles.timePickerColumn}>
+                          <Text style={styles.timePickerLabel}>Hour</Text>
+                          <View style={styles.pickerWrapper}>
+                            <Picker
+                              selectedValue={startHour}
+                              onValueChange={(value) => setStartHour(value)}
+                              style={styles.timePicker}
+                            >
+                              {hours.map((hour) => (
+                                <Picker.Item
+                                  key={hour}
+                                  label={hour}
+                                  value={hour}
+                                />
+                              ))}
+                            </Picker>
+                          </View>
+                        </View>
+                        <View style={styles.timePickerColumn}>
+                          <Text style={styles.timePickerLabel}>Minute</Text>
+                          <View style={styles.pickerWrapper}>
+                            <Picker
+                              selectedValue={startMinute}
+                              onValueChange={(value) => setStartMinute(value)}
+                              style={styles.timePicker}
+                            >
+                              {minutes.map((minute) => (
+                                <Picker.Item
+                                  key={minute}
+                                  label={minute}
+                                  value={minute}
+                                />
+                              ))}
+                            </Picker>
+                          </View>
+                        </View>
+                        <View style={styles.timePickerColumn}>
+                          <Text style={styles.timePickerLabel}>Period</Text>
+                          <View style={styles.pickerWrapper}>
+                            <Picker
+                              selectedValue={startPeriod}
+                              onValueChange={(value) => setStartPeriod(value)}
+                              style={styles.timePicker}
+                            >
+                              {periods.map((period) => (
+                                <Picker.Item
+                                  key={period}
+                                  label={period}
+                                  value={period}
+                                />
+                              ))}
+                            </Picker>
+                          </View>
+                        </View>
+                      </View>
+                    </View>
+                  )}
+
+                  {/* End Time */}
+                  <Text style={[styles.subLabel, { marginTop: 12 }]}>
+                    End Time
+                  </Text>
+                  <TouchableOpacity
+                    style={styles.timePickerButton}
+                    onPress={() => setShowEndTimePicker(!showEndTimePicker)}
+                  >
+                    <Text style={styles.timePickerButtonText}>
+                      {getFormattedTime(endHour, endMinute, endPeriod)}
+                    </Text>
+                    <Ionicons name="time-outline" size={20} color="#666" />
+                  </TouchableOpacity>
+
+                  {showEndTimePicker && (
+                    <View style={styles.timePickerContainer}>
+                      <View style={styles.timePickerRow}>
+                        <View style={styles.timePickerColumn}>
+                          <Text style={styles.timePickerLabel}>Hour</Text>
+                          <View style={styles.pickerWrapper}>
+                            <Picker
+                              selectedValue={endHour}
+                              onValueChange={(value) => setEndHour(value)}
+                              style={styles.timePicker}
+                            >
+                              {hours.map((hour) => (
+                                <Picker.Item
+                                  key={hour}
+                                  label={hour}
+                                  value={hour}
+                                />
+                              ))}
+                            </Picker>
+                          </View>
+                        </View>
+                        <View style={styles.timePickerColumn}>
+                          <Text style={styles.timePickerLabel}>Minute</Text>
+                          <View style={styles.pickerWrapper}>
+                            <Picker
+                              selectedValue={endMinute}
+                              onValueChange={(value) => setEndMinute(value)}
+                              style={styles.timePicker}
+                            >
+                              {minutes.map((minute) => (
+                                <Picker.Item
+                                  key={minute}
+                                  label={minute}
+                                  value={minute}
+                                />
+                              ))}
+                            </Picker>
+                          </View>
+                        </View>
+                        <View style={styles.timePickerColumn}>
+                          <Text style={styles.timePickerLabel}>Period</Text>
+                          <View style={styles.pickerWrapper}>
+                            <Picker
+                              selectedValue={endPeriod}
+                              onValueChange={(value) => setEndPeriod(value)}
+                              style={styles.timePicker}
+                            >
+                              {periods.map((period) => (
+                                <Picker.Item
+                                  key={period}
+                                  label={period}
+                                  value={period}
+                                />
+                              ))}
+                            </Picker>
+                          </View>
+                        </View>
+                      </View>
+                    </View>
+                  )}
+
+                  <Text style={styles.timeHintText}>
+                    Selected: {getActiveHoursString()}
+                  </Text>
                 </View>
 
                 <View style={styles.inputGroup}>
@@ -1699,6 +2034,68 @@ const styles = StyleSheet.create({
     color: "#666",
     marginTop: 6,
     paddingLeft: 4,
+  },
+  subLabel: {
+    fontSize: 13,
+    fontFamily: "Poppins-Medium",
+    color: "#666",
+    marginBottom: 6,
+    marginTop: 4,
+  },
+  timePickerButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "#F5F5F5",
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  timePickerButtonText: {
+    fontSize: 14,
+    fontFamily: "Poppins-Regular",
+    color: "#000",
+  },
+  timePickerContainer: {
+    backgroundColor: "#F9F9F9",
+    borderRadius: 10,
+    padding: 12,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+  },
+  timePickerRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  timePickerColumn: {
+    flex: 1,
+  },
+  timePickerLabel: {
+    fontSize: 12,
+    fontFamily: "Poppins-Medium",
+    color: "#333",
+    marginBottom: 4,
+    textAlign: "center",
+  },
+  pickerWrapper: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+    overflow: "hidden",
+  },
+  timePicker: {
+    height: 45,
+  },
+  timeHintText: {
+    fontSize: 12,
+    fontFamily: "Poppins-Medium",
+    color: "#093F86",
+    marginTop: 8,
+    textAlign: "center",
   },
   // Map modal styles
   mapModalContainer: {

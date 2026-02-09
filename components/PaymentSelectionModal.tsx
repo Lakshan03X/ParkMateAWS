@@ -11,6 +11,8 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 
 interface PaymentSelectionModalProps {
@@ -20,7 +22,7 @@ interface PaymentSelectionModalProps {
   onClose: () => void;
   onPaymentMethodSelected: (
     method: "stripe" | "paypal" | "payoneer",
-    phoneNumber?: string
+    phoneNumber?: string,
   ) => void;
 }
 
@@ -99,7 +101,7 @@ const PaymentSelectionModal: React.FC<PaymentSelectionModalProps> = ({
               resetForm();
             },
           },
-        ]
+        ],
       );
     } catch (error) {
       Alert.alert("Payment Failed", "Please try again.");
@@ -153,7 +155,7 @@ const PaymentSelectionModal: React.FC<PaymentSelectionModalProps> = ({
               resetForm();
             },
           },
-        ]
+        ],
       );
     } catch (error) {
       Alert.alert("Verification Failed", "Invalid OTP. Please try again.");
@@ -183,142 +185,108 @@ const PaymentSelectionModal: React.FC<PaymentSelectionModalProps> = ({
       onRequestClose={handleClose}
     >
       <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          {/* Header */}
-          <View style={styles.header}>
-            <Text style={styles.headerTitle}>Select Payment Method</Text>
-            <TouchableOpacity onPress={handleClose} disabled={isProcessing}>
-              <Ionicons name="close" size={24} color="#000000" />
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView
-            style={styles.contentContainer}
-            showsVerticalScrollIndicator={false}
-          >
-            {/* Amount Display */}
-            <View style={styles.amountCard}>
-              <Text style={styles.amountLabel}>Amount to Pay</Text>
-              <Text style={styles.amountValue}>
-                Rs. {amount.toLocaleString()}
-              </Text>
-              <Text style={styles.descriptionText}>{description}</Text>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={{ flex: 1 }}
+        >
+          <View style={styles.modalContent}>
+            {/* Header */}
+            <View style={styles.header}>
+              <Text style={styles.headerTitle}>Select Payment Method</Text>
+              <TouchableOpacity onPress={handleClose} disabled={isProcessing}>
+                <Ionicons name="close" size={24} color="#000000" />
+              </TouchableOpacity>
             </View>
 
-            {!showOtpInput ? (
-              // Payment Method Selection
-              <View style={styles.methodsContainer}>
-                {paymentMethods.map((method) => (
-                  <TouchableOpacity
-                    key={method.id}
-                    style={[
-                      styles.methodCard,
-                      selectedMethod === method.id && styles.methodCardSelected,
-                    ]}
-                    onPress={() => handleMethodSelect(method.id)}
-                    disabled={isProcessing}
-                  >
-                    <View style={styles.methodIcon}>
-                      <Ionicons
-                        name={method.icon as any}
-                        size={32}
-                        color={method.color}
-                      />
-                    </View>
-                    <View style={styles.methodInfo}>
-                      <Text style={styles.methodName}>{method.name}</Text>
-                      <Text style={styles.methodDescription}>
-                        {method.description}
-                      </Text>
-                    </View>
-                    <View style={styles.methodRadio}>
-                      {selectedMethod === method.id && (
-                        <View style={styles.methodRadioSelected} />
-                      )}
-                    </View>
-                  </TouchableOpacity>
-                ))}
+            <ScrollView
+              style={styles.contentContainer}
+              showsVerticalScrollIndicator={false}
+            >
+              {/* Amount Display */}
+              <View style={styles.amountCard}>
+                <Text style={styles.amountLabel}>Amount to Pay</Text>
+                <Text style={styles.amountValue}>
+                  Rs. {amount.toLocaleString()}
+                </Text>
+                <Text style={styles.descriptionText}>{description}</Text>
               </View>
-            ) : (
-              // Phone Number & OTP Input for Stripe
-              <View style={styles.otpContainer}>
-                <View style={styles.securityBadge}>
-                  <Ionicons name="shield-checkmark" size={24} color="#4CAF50" />
-                  <Text style={styles.securityText}>
-                    Secure Payment Verification
-                  </Text>
-                </View>
 
-                {/* Phone Number Input */}
-                <View style={styles.inputGroup}>
-                  <Text style={styles.label}>Phone Number</Text>
-                  <View style={styles.phoneInputContainer}>
-                    <View style={styles.countryCode}>
-                      <Text style={styles.countryCodeText}>+94</Text>
-                    </View>
-                    <TextInput
-                      style={styles.phoneInput}
-                      placeholder="71 234 5678"
-                      placeholderTextColor="#999999"
-                      value={phoneNumber}
-                      onChangeText={setPhoneNumber}
-                      keyboardType="phone-pad"
-                      maxLength={10}
-                      editable={!otpSent && !isProcessing}
-                    />
-                  </View>
-                </View>
-
-                {!otpSent ? (
-                  <TouchableOpacity
-                    style={[
-                      styles.sendOtpButton,
-                      isProcessing && styles.buttonDisabled,
-                    ]}
-                    onPress={handleSendOtp}
-                    disabled={isProcessing}
-                  >
-                    {isProcessing ? (
-                      <ActivityIndicator size="small" color="#FFFFFF" />
-                    ) : (
-                      <>
+              {!showOtpInput ? (
+                // Payment Method Selection
+                <View style={styles.methodsContainer}>
+                  {paymentMethods.map((method) => (
+                    <TouchableOpacity
+                      key={method.id}
+                      style={[
+                        styles.methodCard,
+                        selectedMethod === method.id &&
+                          styles.methodCardSelected,
+                      ]}
+                      onPress={() => handleMethodSelect(method.id)}
+                      disabled={isProcessing}
+                    >
+                      <View style={styles.methodIcon}>
                         <Ionicons
-                          name="mail-outline"
-                          size={20}
-                          color="#FFFFFF"
+                          name={method.icon as any}
+                          size={32}
+                          color={method.color}
                         />
-                        <Text style={styles.sendOtpButtonText}>
-                          Send Verification Code
+                      </View>
+                      <View style={styles.methodInfo}>
+                        <Text style={styles.methodName}>{method.name}</Text>
+                        <Text style={styles.methodDescription}>
+                          {method.description}
                         </Text>
-                      </>
-                    )}
-                  </TouchableOpacity>
-                ) : (
-                  <>
-                    {/* OTP Input */}
-                    <View style={styles.inputGroup}>
-                      <Text style={styles.label}>Enter Verification Code</Text>
-                      <TextInput
-                        style={styles.otpInput}
-                        placeholder="000000"
-                        placeholderTextColor="#999999"
-                        value={otp}
-                        onChangeText={setOtp}
-                        keyboardType="numeric"
-                        maxLength={6}
-                        editable={!isProcessing}
-                      />
-                      <Text style={styles.otpHint}>
-                        Enter the 6-digit code sent to {phoneNumber}
-                      </Text>
-                    </View>
+                      </View>
+                      <View style={styles.methodRadio}>
+                        {selectedMethod === method.id && (
+                          <View style={styles.methodRadioSelected} />
+                        )}
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              ) : (
+                // Phone Number & OTP Input for Stripe
+                <View style={styles.otpContainer}>
+                  <View style={styles.securityBadge}>
+                    <Ionicons
+                      name="shield-checkmark"
+                      size={24}
+                      color="#4CAF50"
+                    />
+                    <Text style={styles.securityText}>
+                      Secure Payment Verification
+                    </Text>
+                  </View>
 
+                  {/* Phone Number Input */}
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.label}>Phone Number</Text>
+                    <View style={styles.phoneInputContainer}>
+                      <View style={styles.countryCode}>
+                        <Text style={styles.countryCodeText}>+94</Text>
+                      </View>
+                      <TextInput
+                        style={styles.phoneInput}
+                        placeholder="71 234 5678"
+                        placeholderTextColor="#999999"
+                        value={phoneNumber}
+                        onChangeText={setPhoneNumber}
+                        keyboardType="phone-pad"
+                        maxLength={10}
+                        editable={!otpSent && !isProcessing}
+                      />
+                    </View>
+                  </View>
+
+                  {!otpSent ? (
                     <TouchableOpacity
                       style={[
-                        styles.verifyButton,
+                        styles.sendOtpButton,
                         isProcessing && styles.buttonDisabled,
                       ]}
-                      onPress={handleVerifyOtp}
+                      onPress={handleSendOtp}
                       disabled={isProcessing}
                     >
                       {isProcessing ? (
@@ -326,46 +294,92 @@ const PaymentSelectionModal: React.FC<PaymentSelectionModalProps> = ({
                       ) : (
                         <>
                           <Ionicons
-                            name="checkmark-circle"
+                            name="mail-outline"
                             size={20}
                             color="#FFFFFF"
                           />
-                          <Text style={styles.verifyButtonText}>
-                            Verify & Continue
+                          <Text style={styles.sendOtpButtonText}>
+                            Send Verification Code
                           </Text>
                         </>
                       )}
                     </TouchableOpacity>
+                  ) : (
+                    <>
+                      {/* OTP Input */}
+                      <View style={styles.inputGroup}>
+                        <Text style={styles.label}>
+                          Enter Verification Code
+                        </Text>
+                        <TextInput
+                          style={styles.otpInput}
+                          placeholder="000000"
+                          placeholderTextColor="#999999"
+                          value={otp}
+                          onChangeText={setOtp}
+                          keyboardType="numeric"
+                          maxLength={6}
+                          editable={!isProcessing}
+                        />
+                        <Text style={styles.otpHint}>
+                          Enter the 6-digit code sent to {phoneNumber}
+                        </Text>
+                      </View>
 
-                    <TouchableOpacity
-                      style={styles.resendButton}
-                      onPress={handleSendOtp}
-                      disabled={isProcessing}
-                    >
-                      <Text style={styles.resendButtonText}>Resend Code</Text>
-                    </TouchableOpacity>
-                  </>
-                )}
+                      <TouchableOpacity
+                        style={[
+                          styles.verifyButton,
+                          isProcessing && styles.buttonDisabled,
+                        ]}
+                        onPress={handleVerifyOtp}
+                        disabled={isProcessing}
+                      >
+                        {isProcessing ? (
+                          <ActivityIndicator size="small" color="#FFFFFF" />
+                        ) : (
+                          <>
+                            <Ionicons
+                              name="checkmark-circle"
+                              size={20}
+                              color="#FFFFFF"
+                            />
+                            <Text style={styles.verifyButtonText}>
+                              Verify & Continue
+                            </Text>
+                          </>
+                        )}
+                      </TouchableOpacity>
 
-                <TouchableOpacity
-                  style={styles.backButton}
-                  onPress={() => {
-                    setShowOtpInput(false);
-                    setOtpSent(false);
-                    setPhoneNumber("");
-                    setOtp("");
-                  }}
-                  disabled={isProcessing}
-                >
-                  <Ionicons name="arrow-back" size={20} color="#093F86" />
-                  <Text style={styles.backButtonText}>
-                    Change Payment Method
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          </ScrollView>
-        </View>
+                      <TouchableOpacity
+                        style={styles.resendButton}
+                        onPress={handleSendOtp}
+                        disabled={isProcessing}
+                      >
+                        <Text style={styles.resendButtonText}>Resend Code</Text>
+                      </TouchableOpacity>
+                    </>
+                  )}
+
+                  <TouchableOpacity
+                    style={styles.backButton}
+                    onPress={() => {
+                      setShowOtpInput(false);
+                      setOtpSent(false);
+                      setPhoneNumber("");
+                      setOtp("");
+                    }}
+                    disabled={isProcessing}
+                  >
+                    <Ionicons name="arrow-back" size={20} color="#093F86" />
+                    <Text style={styles.backButtonText}>
+                      Change Payment Method
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </ScrollView>
+          </View>
+        </KeyboardAvoidingView>
       </View>
     </Modal>
   );

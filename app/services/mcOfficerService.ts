@@ -26,7 +26,12 @@ class MCOfficerService {
     try {
       const result = await awsDynamoService.scan(COLLECTION_NAME);
 
-      const officers: MCOfficer[] = (result.items || []).map((data: any) => ({
+      // Filter only MC officers (userType === 'mc_officer')
+      const officerItems = (result.items || []).filter(
+        (item: any) => item.userType === "mc_officer",
+      );
+
+      const officers: MCOfficer[] = officerItems.map((data: any) => ({
         id: data.id,
         name: data.name,
         mobileNumber: data.mobileNumber,
@@ -65,8 +70,10 @@ class MCOfficerService {
       const id = `OFFICER_${Date.now()}_${Math.random().toString(36).substring(7)}`;
 
       const newOfficer = {
+        userId: id, // DynamoDB partition key
         id,
         ...officerData,
+        userType: "mc_officer", // Identify as MC officer
         status: officerData.status || "on duty",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -91,7 +98,7 @@ class MCOfficerService {
     try {
       await awsDynamoService.updateItem(
         COLLECTION_NAME,
-        { id: officerId },
+        { userId: officerId },
         {
           ...updates,
           updatedAt: new Date().toISOString(),
@@ -108,7 +115,7 @@ class MCOfficerService {
    */
   async deleteOfficer(officerId: string): Promise<void> {
     try {
-      await awsDynamoService.deleteItem(COLLECTION_NAME, { id: officerId });
+      await awsDynamoService.deleteItem(COLLECTION_NAME, { userId: officerId });
     } catch (error) {
       console.error("Error deleting MC officer:", error);
       throw new Error("Failed to delete MC officer");
@@ -249,7 +256,7 @@ class MCOfficerService {
     try {
       await awsDynamoService.updateItem(
         COLLECTION_NAME,
-        { id: officerId },
+        { userId: officerId },
         {
           selectedCouncil: selectedCouncil,
           updatedAt: new Date().toISOString(),
