@@ -17,6 +17,9 @@ import {
 } from "react-native-safe-area-context";
 import awsDynamoService from "../../services/awsDynamoService";
 
+// Simple in-memory storage for user session
+let cachedUserData: any = null;
+
 const OwnerDashboard = () => {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -24,48 +27,104 @@ const OwnerDashboard = () => {
 
   const [userName, setUserName] = useState("Vehicle Owner");
   const [profileComplete, setProfileComplete] = useState(true);
+  const [userData, setUserData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    // Get user name from params if available
-    if (params.fullName) {
-      const firstName = (params.fullName as string).split(" ")[0];
-      setUserName(firstName);
-    }
+    const loadUserData = async () => {
+      // Prevent re-running if already loading
+      if (isLoading) return;
+      setIsLoading(true);
 
-    // Check profile completion status
-    const checkProfileStatus = async () => {
-      if (params.userId) {
-        try {
-          const result = await awsDynamoService.getItem("parkmate-users", {
+      try {
+        // First, try to use data from params if available
+        if (params.userId && params.fullName) {
+          const userInfo = {
             userId: params.userId,
-          });
+            fullName: params.fullName,
+            mobileNumber: params.mobileNumber,
+            email: params.email,
+            nicNumber: params.nicNumber,
+            profileComplete: params.profileComplete,
+          };
+          cachedUserData = userInfo;
+          setUserData(userInfo);
 
-          if (result.item) {
-            const userData = result.item;
-            const isComplete =
-              userData.profileComplete !== false && userData.nicNumber != null;
-            setProfileComplete(isComplete);
+          const firstName = (params.fullName as string).split(" ")[0];
+          setUserName(firstName);
+
+          // Fetch latest data from database
+          try {
+            const result = await awsDynamoService.getItem("parkmate-users", {
+              userId: params.userId as string,
+            });
+
+            if (result.item) {
+              const fetchedUserData = result.item;
+              const isComplete =
+                fetchedUserData.profileComplete !== false &&
+                fetchedUserData.nicNumber != null;
+              setProfileComplete(isComplete);
+
+              // Update cached data with latest from database
+              const updatedUserInfo = {
+                userId: fetchedUserData.userId || params.userId,
+                fullName: fetchedUserData.fullName,
+                mobileNumber: fetchedUserData.mobileNumber,
+                email: fetchedUserData.email,
+                nicNumber: fetchedUserData.nicNumber,
+                profileComplete: isComplete,
+              };
+              cachedUserData = updatedUserInfo;
+
+              if (fetchedUserData.fullName) {
+                const firstName = fetchedUserData.fullName.split(" ")[0];
+                setUserName(firstName);
+              }
+            }
+          } catch (error) {
+            console.error("Error fetching user data from database:", error);
           }
-        } catch (error) {
-          console.error("Error fetching user data:", error);
+        } else if (cachedUserData) {
+          // If no params, use cached data
+          setUserData(cachedUserData);
+
+          if (cachedUserData.fullName) {
+            const firstName = cachedUserData.fullName.split(" ")[0];
+            setUserName(firstName);
+          }
+
+          if (cachedUserData.profileComplete !== undefined) {
+            setProfileComplete(cachedUserData.profileComplete !== false);
+          }
         }
-      } else {
-        // Check from params
-        setProfileComplete(params.profileComplete !== "false");
+
+        console.log("✅ Owner Dashboard loaded with user:", {
+          userId: params.userId || cachedUserData?.userId,
+          fullName: params.fullName || cachedUserData?.fullName,
+          nicNumber: params.nicNumber || cachedUserData?.nicNumber,
+          profileComplete:
+            params.profileComplete || cachedUserData?.profileComplete,
+        });
+      } catch (error) {
+        console.error("Error loading user data:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    checkProfileStatus();
-
-    console.log("✅ Owner Dashboard loaded with user:", {
-      userId: params.userId,
-      fullName: params.fullName,
-      nicNumber: params.nicNumber,
-      profileComplete: params.profileComplete,
-    });
-  }, [params]);
+    loadUserData();
+  }, [params.userId]); // Only depend on userId to prevent infinite loops
 
   const handleProfileClick = () => {
+    const userInfo = userData || {
+      userId: params.userId,
+      fullName: params.fullName,
+      mobileNumber: params.mobileNumber,
+      email: params.email,
+      nicNumber: params.nicNumber,
+    };
+
     if (!profileComplete) {
       Alert.alert(
         "Complete Your Profile",
@@ -78,10 +137,10 @@ const OwnerDashboard = () => {
               router.push({
                 pathname: "/screens/parkingOwner/profile",
                 params: {
-                  userId: params.userId,
-                  fullName: params.fullName,
-                  mobileNumber: params.mobileNumber,
-                  email: params.email,
+                  userId: userInfo.userId,
+                  fullName: userInfo.fullName,
+                  mobileNumber: userInfo.mobileNumber,
+                  email: userInfo.email,
                 },
               });
             },
@@ -92,11 +151,11 @@ const OwnerDashboard = () => {
       router.push({
         pathname: "/screens/parkingOwner/profile",
         params: {
-          userId: params.userId,
-          fullName: params.fullName,
-          mobileNumber: params.mobileNumber,
-          email: params.email,
-          nicNumber: params.nicNumber,
+          userId: userInfo.userId,
+          fullName: userInfo.fullName,
+          mobileNumber: userInfo.mobileNumber,
+          email: userInfo.email,
+          nicNumber: userInfo.nicNumber,
         },
       });
     }
@@ -230,7 +289,13 @@ const OwnerDashboard = () => {
               style={styles.menuButton}
               activeOpacity={0.8}
               onPress={() =>
-                router.push("/screens/parkingOwner/dashboard/fines")
+                router.push({
+                  pathname: "/screens/parkingOwner/dashboard/fines",
+                  params: {
+                    userId: userData?.userId || params.userId,
+                    fullName: userData?.fullName || params.fullName,
+                  },
+                })
               }
             >
               <View style={styles.buttonContent}>

@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -34,6 +34,7 @@ interface Fine {
 
 const DetectedFines = () => {
   const router = useRouter();
+  const params = useLocalSearchParams();
   const insets = useSafeAreaInsets();
   const receiptRef = useRef<View>(null);
 
@@ -47,48 +48,96 @@ const DetectedFines = () => {
   const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
   const [verifiedPhoneNumber, setVerifiedPhoneNumber] = useState("");
   const [selectedFine, setSelectedFine] = useState<Fine | null>(null);
+  const [filterStatus, setFilterStatus] = useState<"all" | "paid" | "unpaid">(
+    "all",
+  );
 
   useEffect(() => {
     const load = async () => {
       try {
         setIsLoading(true);
-        const unpaid = await parkingTicketService.getUnpaidFines();
+        const userId = params.userId as string;
+        console.log("📋 Loading fines for user:", userId);
+
+        let allFines;
+        if (userId) {
+          // Get fines for specific user
+          allFines = await parkingTicketService.getFinesByUserId(userId);
+        } else {
+          // Fallback to all fines if no userId
+          allFines = await parkingTicketService.getAllFines();
+        }
+
+        console.log("📋 Total fines fetched:", allFines.length);
+        if (allFines.length > 0) {
+          console.log("📋 Sample fine data:", allFines[0]);
+        }
 
         // Map service Fine -> local Fine shape
-        const mapped = unpaid.map((f) => ({
-          id: f.id,
-          ticketId: f.ticketId || f.id,
-          amount: (f.fineAmount as number) || 0,
-          isPaid: !!f.isPaid,
-          issuedDate:
-            f.fineDate ||
-            (f.createdAt
-              ? new Date(
-                  (f.createdAt as any).toDate
-                    ? (f.createdAt as any).toDate()
-                    : f.createdAt
-                )
-                  .toISOString()
-                  .split("T")[0]
-              : ""),
-          location: f.location,
-          vehicleNumber: f.vehicleNumber,
-        }));
+        const mapped = allFines.map((f) => {
+          const isPaidStatus = !!f.isPaid;
+          console.log(
+            `📋 Fine ${f.id || f.fineId}: isPaid=${isPaidStatus}, amount=${f.fineAmount}`,
+          );
+
+          return {
+            id: f.id || f.fineId || f.ticketId,
+            ticketId: f.ticketId || f.id || f.fineId,
+            amount: (f.fineAmount as number) || 0,
+            isPaid: isPaidStatus,
+            issuedDate:
+              f.fineDate ||
+              (f.createdAt
+                ? new Date(
+                    (f.createdAt as any).toDate
+                      ? (f.createdAt as any).toDate()
+                      : f.createdAt,
+                  )
+                    .toISOString()
+                    .split("T")[0]
+                : ""),
+            location: f.location,
+            vehicleNumber: f.vehicleNumber,
+          };
+        });
+
+        console.log("📋 Mapped fines:", mapped.length);
+        console.log("📋 Paid fines:", mapped.filter((f) => f.isPaid).length);
+        console.log("📋 Unpaid fines:", mapped.filter((f) => !f.isPaid).length);
+
+        // Sort by paid status (unpaid first) and then by date
+        mapped.sort((a, b) => {
+          if (a.isPaid !== b.isPaid) {
+            return a.isPaid ? 1 : -1; // Unpaid first
+          }
+          return (
+            new Date(b.issuedDate).getTime() - new Date(a.issuedDate).getTime()
+          );
+        });
 
         setFines(mapped);
       } catch (err) {
-        console.error("Failed to load fines", err);
-        Alert.alert("Error", "Failed to load fines");
+        console.error("❌ Failed to load fines:", err);
+        Alert.alert("Error", "Failed to load fines. Please try again.");
       } finally {
         setIsLoading(false);
       }
     };
 
     load();
-  }, []);
+  }, [params.userId]);
 
   const unpaidFines = fines.filter((fine) => !fine.isPaid);
+  const paidFines = fines.filter((fine) => fine.isPaid);
   const hasUnpaidFines = unpaidFines.length > 0;
+
+  // Filter fines based on selected status
+  const filteredFines =
+    filterStatus === "all"
+      ? fines
+      : filterStatus === "paid"
+        ? paidFines
+        : unpaidFines;
 
   const handlePayFine = (fine: Fine) => {
     setSelectedFine(fine);
@@ -97,7 +146,7 @@ const DetectedFines = () => {
 
   const handlePaymentMethodSelected = async (
     method: "stripe" | "paypal" | "payoneer",
-    phoneNumber?: string
+    phoneNumber?: string,
   ) => {
     try {
       setShowPaymentSelectionModal(false);
@@ -118,7 +167,7 @@ const DetectedFines = () => {
       console.error("Payment error:", error);
       Alert.alert(
         "Payment Failed",
-        "Failed to process payment. Please try again."
+        "Failed to process payment. Please try again.",
       );
     } finally {
       setIsProcessing(false);
@@ -138,11 +187,11 @@ const DetectedFines = () => {
 
       const receipt = await parkingTicketService.payFine(
         selectedFine.id,
-        paymentId
+        paymentId,
       );
 
       const receiptInfo: ReceiptData = {
-        receiptId: receipt.id,
+        receiptId: receipt.receiptId,
         ticketId: receipt.ticketId,
         vehicleNumber: receipt.vehicleNumber,
         amount: receipt.amount,
@@ -150,8 +199,8 @@ const DetectedFines = () => {
           method === "stripe"
             ? "Stripe Card"
             : method === "paypal"
-            ? "PayPal"
-            : "Payoneer",
+              ? "PayPal"
+              : "Payoneer",
         paymentId: receipt.paymentId,
         transactionDate: receipt.transactionDate,
         type: "fine",
@@ -165,19 +214,19 @@ const DetectedFines = () => {
       // Update local state
       setFines((prevFines) =>
         prevFines.map((fine) =>
-          fine.id === selectedFine.id ? { ...fine, isPaid: true } : fine
-        )
+          fine.id === selectedFine.id ? { ...fine, isPaid: true } : fine,
+        ),
       );
 
       Alert.alert(
         "Payment Successful",
-        "Your fine has been paid successfully!"
+        "Your fine has been paid successfully!",
       );
     } catch (error) {
       console.error("Payment error:", error);
       Alert.alert(
         "Payment Failed",
-        "Failed to process payment. Please try again."
+        "Failed to process payment. Please try again.",
       );
     } finally {
       setIsProcessing(false);
@@ -191,7 +240,7 @@ const DetectedFines = () => {
       setIsProcessing(true);
       const fileUri = await receiptService.downloadReceipt(
         receiptData,
-        receiptRef.current
+        receiptRef.current,
       );
 
       Alert.alert(
@@ -209,7 +258,7 @@ const DetectedFines = () => {
               router.push("/screens/parkingOwner/ownerDashboard");
             },
           },
-        ]
+        ],
       );
     } catch (error) {
       console.error("Error downloading receipt:", error);
@@ -245,7 +294,7 @@ const DetectedFines = () => {
           >
             <Ionicons name="arrow-back" size={24} color="#000000" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Detected Fines</Text>
+          <Text style={styles.headerTitle}>Fines</Text>
           <View style={styles.headerSpacer} />
         </View>
 
@@ -259,6 +308,63 @@ const DetectedFines = () => {
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
           >
+            {/* Filter Tabs */}
+            <View style={styles.filterContainer}>
+              <TouchableOpacity
+                style={[
+                  styles.filterTab,
+                  filterStatus === "all" && styles.filterTabActive,
+                ]}
+                onPress={() => setFilterStatus("all")}
+                activeOpacity={0.7}
+              >
+                <Text
+                  style={[
+                    styles.filterTabText,
+                    filterStatus === "all" && styles.filterTabTextActive,
+                  ]}
+                >
+                  All ({fines.length})
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.filterTab,
+                  filterStatus === "unpaid" && styles.filterTabActive,
+                ]}
+                onPress={() => setFilterStatus("unpaid")}
+                activeOpacity={0.7}
+              >
+                <Text
+                  style={[
+                    styles.filterTabText,
+                    filterStatus === "unpaid" && styles.filterTabTextActive,
+                  ]}
+                >
+                  Unpaid ({unpaidFines.length})
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.filterTab,
+                  filterStatus === "paid" && styles.filterTabActive,
+                ]}
+                onPress={() => setFilterStatus("paid")}
+                activeOpacity={0.7}
+              >
+                <Text
+                  style={[
+                    styles.filterTabText,
+                    filterStatus === "paid" && styles.filterTabTextActive,
+                  ]}
+                >
+                  Paid ({paidFines.length})
+                </Text>
+              </TouchableOpacity>
+            </View>
+
             {/* Warning Banner */}
             {hasUnpaidFines && (
               <View style={styles.warningBanner}>
@@ -287,10 +393,25 @@ const DetectedFines = () => {
               </View>
             )}
 
+            {/* Empty Filter Message */}
+            {fines.length > 0 && filteredFines.length === 0 && (
+              <View style={styles.noFinesContainer}>
+                <Ionicons name="filter-outline" size={60} color="#999999" />
+                <Text style={styles.noFinesTitle}>
+                  No {filterStatus === "paid" ? "Paid" : "Unpaid"} Fines
+                </Text>
+                <Text style={styles.noFinesSubtitle}>
+                  {filterStatus === "paid"
+                    ? "You haven't paid any fines yet."
+                    : "All fines have been paid!"}
+                </Text>
+              </View>
+            )}
+
             {/* Fines List */}
-            {fines.length > 0 && (
+            {filteredFines.length > 0 && (
               <View style={styles.finesContainer}>
-                {fines.map((fine, index) => (
+                {filteredFines.map((fine, index) => (
                   <View
                     key={fine.ticketId}
                     style={[
@@ -298,10 +419,34 @@ const DetectedFines = () => {
                       fine.isPaid && styles.fineCardPaid,
                     ]}
                   >
+                    {/* Status Badge */}
+                    <View
+                      style={[
+                        styles.statusBadge,
+                        fine.isPaid
+                          ? styles.statusBadgePaid
+                          : styles.statusBadgeUnpaid,
+                      ]}
+                    >
+                      <Ionicons
+                        name={fine.isPaid ? "checkmark-circle" : "alert-circle"}
+                        size={16}
+                        color="#FFFFFF"
+                      />
+                      <Text style={styles.statusBadgeText}>
+                        {fine.isPaid ? "PAID" : "UNPAID"}
+                      </Text>
+                    </View>
+
                     <View style={styles.fineCardContent}>
                       <Text style={styles.ticketId}>
                         Ticket Id : {fine.ticketId}
                       </Text>
+                      {fine.vehicleNumber && (
+                        <Text style={styles.vehicleNumber}>
+                          Vehicle: {fine.vehicleNumber}
+                        </Text>
+                      )}
                       <Text style={styles.fineAmount}>
                         Fine Amount : Rs.{fine.amount.toFixed(2)}
                       </Text>
@@ -508,6 +653,69 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 40,
   },
+  filterContainer: {
+    flexDirection: "row",
+    backgroundColor: "#F5F5F5",
+    borderRadius: 12,
+    padding: 4,
+    marginBottom: 20,
+    gap: 4,
+  },
+  filterTab: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  filterTabActive: {
+    backgroundColor: "#093F86",
+    shadowColor: "#093F86",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  filterTabText: {
+    fontSize: 13,
+    fontFamily: "Poppins-Medium",
+    color: "#666666",
+  },
+  filterTabTextActive: {
+    color: "#FFFFFF",
+    fontFamily: "Poppins-SemiBold",
+  },
+  statusBadge: {
+    position: "absolute",
+    top: 12,
+    right: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20,
+    gap: 4,
+    zIndex: 1,
+  },
+  statusBadgePaid: {
+    backgroundColor: "#4CAF50",
+  },
+  statusBadgeUnpaid: {
+    backgroundColor: "#FF6B6B",
+  },
+  statusBadgeText: {
+    fontSize: 11,
+    fontFamily: "Poppins-Bold",
+    color: "#FFFFFF",
+    letterSpacing: 0.5,
+  },
+  vehicleNumber: {
+    fontSize: 15,
+    fontFamily: "Poppins-Medium",
+    color: "#093F86",
+    marginBottom: 6,
+  },
   warningBanner: {
     backgroundColor: "#E8F5E9",
     borderRadius: 12,
@@ -566,19 +774,51 @@ const styles = StyleSheet.create({
     elevation: 3,
     borderWidth: 1,
     borderColor: "#E0E0E0",
+    position: "relative",
   },
   fineCardPaid: {
     backgroundColor: "#F1F8F4",
     borderColor: "#C8E6C9",
   },
+  statusBadge: {
+    position: "absolute",
+    top: 12,
+    right: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20,
+    gap: 4,
+    zIndex: 1,
+  },
+  statusBadgePaid: {
+    backgroundColor: "#4CAF50",
+  },
+  statusBadgeUnpaid: {
+    backgroundColor: "#FF6B6B",
+  },
+  statusBadgeText: {
+    fontSize: 11,
+    fontFamily: "Poppins-Bold",
+    color: "#FFFFFF",
+    letterSpacing: 0.5,
+  },
   fineCardContent: {
     marginBottom: 16,
+    paddingRight: 80,
   },
   ticketId: {
     fontSize: 16,
     fontFamily: "Poppins-Medium",
     color: "#333333",
     marginBottom: 8,
+  },
+  vehicleNumber: {
+    fontSize: 15,
+    fontFamily: "Poppins-Medium",
+    color: "#093F86",
+    marginBottom: 6,
   },
   fineAmount: {
     fontSize: 16,

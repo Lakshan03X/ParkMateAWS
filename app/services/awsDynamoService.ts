@@ -78,6 +78,23 @@ class AWSDynamoService {
     updates: any,
   ): Promise<{ success: boolean; error?: string }> {
     try {
+      // Validate inputs before sending
+      if (!tableName) {
+        throw new Error("Table name is required");
+      }
+      if (!key || Object.keys(key).length === 0) {
+        throw new Error("Key is required and cannot be empty");
+      }
+      if (!updates || Object.keys(updates).length === 0) {
+        throw new Error("Updates object is required and cannot be empty");
+      }
+
+      console.log("Updating item:", {
+        tableName,
+        key,
+        updates,
+      });
+
       await axios.post(`${this.apiUrl}/update-item`, {
         tableName,
         key,
@@ -87,8 +104,16 @@ class AWSDynamoService {
       return { success: true };
     } catch (error: any) {
       console.error("DynamoDB UpdateItem Error:", error);
+      console.error("Error details:", {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message,
+      });
       const errorMessage =
-        error.response?.data?.message || error.message || "Update item failed";
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.message ||
+        "Update item failed";
       throw new Error(errorMessage);
     }
   }

@@ -96,7 +96,7 @@ class ParkingTicketService {
         // Mark ticket as inactive
         await awsDynamoService.updateItem(
           this.TICKETS_COLLECTION,
-          { id: activeTicket.id },
+          { ticketId: activeTicket.ticketId },
           {
             isActive: false,
             updatedAt: new Date().toISOString(),
@@ -275,7 +275,7 @@ class ParkingTicketService {
       if (ticket) {
         await awsDynamoService.updateItem(
           this.TICKETS_COLLECTION,
-          { id: ticket.id },
+          { ticketId: ticket.ticketId },
           {
             canCancel,
             updatedAt: new Date().toISOString(),
@@ -318,7 +318,7 @@ class ParkingTicketService {
 
       await awsDynamoService.updateItem(
         this.TICKETS_COLLECTION,
-        { id: ticket.id },
+        { ticketId: ticket.ticketId },
         {
           endTime: newEndTime.toISOString(),
           parkingFee: ticket.parkingFee + additionalFee,
@@ -350,7 +350,7 @@ class ParkingTicketService {
       if (ticket) {
         await awsDynamoService.updateItem(
           this.TICKETS_COLLECTION,
-          { id: ticket.id },
+          { ticketId: ticket.ticketId },
           {
             isCancelled: true,
             isActive: false,
@@ -368,7 +368,7 @@ class ParkingTicketService {
 
         for (const fine of relatedFines) {
           await awsDynamoService.deleteItem(this.FINES_COLLECTION, {
-            id: fine.id,
+            fineId: fine.fineId,
           });
         }
       }
@@ -384,7 +384,7 @@ class ParkingTicketService {
   async payFine(fineId: string, paymentId: string): Promise<PaymentReceipt> {
     try {
       const result = await awsDynamoService.getItem(this.FINES_COLLECTION, {
-        id: fineId,
+        fineId: fineId,
       });
 
       if (!result.item) {
@@ -395,7 +395,7 @@ class ParkingTicketService {
 
       await awsDynamoService.updateItem(
         this.FINES_COLLECTION,
-        { id: fineId },
+        { fineId: fineId },
         {
           isPaid: true,
           paidAt: new Date().toISOString(),
@@ -406,7 +406,7 @@ class ParkingTicketService {
       // Create receipt
       const receiptId = `RECEIPT_${Date.now()}_${Math.floor(1000 + Math.random() * 9000)}`;
       const receiptData = {
-        id: receiptId,
+        receiptId: receiptId,
         ticketId: fineData.ticketId,
         vehicleNumber: fineData.vehicleNumber,
         amount: fineData.fineAmount,
@@ -439,7 +439,7 @@ class ParkingTicketService {
 
       await awsDynamoService.updateItem(
         this.TICKETS_COLLECTION,
-        { id: ticket.id },
+        { ticketId: ticket.ticketId }, // Use ticketId as the primary key
         {
           isPaid: true,
           isActive: false,
@@ -452,7 +452,7 @@ class ParkingTicketService {
       // Create receipt
       const receiptId = `RECEIPT_${Date.now()}_${Math.floor(1000 + Math.random() * 9000)}`;
       const receiptData = {
-        id: receiptId,
+        receiptId: receiptId,
         ticketId: ticket.ticketId,
         vehicleNumber: ticket.vehicleNumber,
         amount: ticket.parkingFee,
@@ -563,6 +563,41 @@ class ParkingTicketService {
   }
 
   /**
+   * Get all fines (both paid and unpaid)
+   */
+  async getAllFines(): Promise<Fine[]> {
+    try {
+      const result = await awsDynamoService.scan(this.FINES_COLLECTION);
+      return (result.items || []) as Fine[];
+    } catch (error) {
+      console.error("Error fetching all fines:", error);
+      throw new Error("Failed to fetch all fines");
+    }
+  }
+
+  /**
+   * Get fines for a specific user by userId
+   */
+  async getFinesByUserId(userId: string): Promise<Fine[]> {
+    try {
+      const result = await awsDynamoService.scan(this.FINES_COLLECTION);
+      const allFines = (result.items || []) as Fine[];
+
+      // Filter fines that belong to this user
+      // Assuming fines have userId field linking to parkmate-users
+      const userFines = allFines.filter(
+        (fine: any) => fine.userId === userId || fine.ownerId === userId,
+      );
+
+      console.log(`📋 Found ${userFines.length} fines for user ${userId}`);
+      return userFines;
+    } catch (error) {
+      console.error("Error fetching user fines:", error);
+      throw new Error("Failed to fetch user fines");
+    }
+  }
+
+  /**
    * Get all parking tickets
    */
   async getAllTickets(): Promise<ParkingTicket[]> {
@@ -634,7 +669,7 @@ class ParkingTicketService {
       // Mark ticket as inactive and link to fine
       await awsDynamoService.updateItem(
         this.TICKETS_COLLECTION,
-        { id: ticket.id },
+        { ticketId: ticket.ticketId },
         {
           isActive: false,
           convertedToFine: true,

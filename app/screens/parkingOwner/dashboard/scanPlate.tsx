@@ -85,7 +85,7 @@ const ScanPlate = () => {
           "Screen dimensions:",
           screenDimensions.width,
           "x",
-          screenDimensions.height
+          screenDimensions.height,
         );
 
         // Crop to the frame area only
@@ -102,19 +102,19 @@ const ScanPlate = () => {
             const cropY = Math.max(0, absoluteFrameLayout.y * scaleY);
             const cropWidth = Math.min(
               absoluteFrameLayout.width * scaleX,
-              photo.width - cropX
+              photo.width - cropX,
             );
             const cropHeight = Math.min(
               absoluteFrameLayout.height * scaleY,
-              photo.height - cropY
+              photo.height - cropY,
             );
 
             console.log("🔲 Cropping to frame area:");
             console.log(
-              `  Origin: (${Math.round(cropX)}, ${Math.round(cropY)})`
+              `  Origin: (${Math.round(cropX)}, ${Math.round(cropY)})`,
             );
             console.log(
-              `  Size: ${Math.round(cropWidth)} x ${Math.round(cropHeight)}`
+              `  Size: ${Math.round(cropWidth)} x ${Math.round(cropHeight)}`,
             );
 
             // Crop the image to frame area
@@ -133,7 +133,7 @@ const ScanPlate = () => {
               {
                 compress: 1,
                 format: ImageManipulator.SaveFormat.JPEG,
-              }
+              },
             );
 
             finalImageUri = croppedImage.uri;
@@ -171,7 +171,7 @@ const ScanPlate = () => {
               [
                 { text: "Retry", onPress: () => handleRetake() },
                 { text: "Manual Entry", onPress: () => setManualEntry(true) },
-              ]
+              ],
             );
           }
         } catch (ocrError: any) {
@@ -182,7 +182,7 @@ const ScanPlate = () => {
             [
               { text: "Retry", onPress: () => handleRetake() },
               { text: "Manual Entry", onPress: () => setManualEntry(true) },
-            ]
+            ],
           );
         }
       }
@@ -202,15 +202,59 @@ const ScanPlate = () => {
     setManualEntry(false);
   };
 
+  const validateSriLankanPlate = (plate: string): boolean => {
+    if (!plate || plate.trim() === "") return false;
+
+    const cleaned = plate.trim().toUpperCase();
+
+    // Valid Sri Lankan province codes
+    const validProvinces = [
+      "WP",
+      "UP",
+      "SP",
+      "NP",
+      "EP",
+      "NW",
+      "NC",
+      "SG",
+      "CP",
+    ];
+
+    // Pattern: Province Code + 3 letters + hyphen + 4 digits (WP BBH-2028)
+    const strictPattern = /^([A-Z]{2})\s+([A-Z]{3})[ ](\d{4})$/;
+    const match = cleaned.match(strictPattern);
+
+    if (match) {
+      const provinceCode = match[1];
+      return validProvinces.includes(provinceCode);
+    }
+
+    // Alternative format: 3 letters + hyphen + 4 digits (ABC-1234)
+    const altPattern = /^([A-Z]{3})[-]?(\d{4})$/;
+    return altPattern.test(cleaned);
+  };
+
   const handleConfirm = async () => {
     if (extractedText) {
       try {
+        // Validate Sri Lankan number plate pattern
+        if (!validateSriLankanPlate(extractedText)) {
+          Alert.alert(
+            "Invalid Number Plate",
+            "The detected text does not match a valid Sri Lankan number plate format. Please retry or enter manually.",
+            [
+              { text: "Retry", onPress: () => handleRetake() },
+              { text: "Manual Entry", onPress: () => setManualEntry(true) },
+            ],
+          );
+          return;
+        }
+
         setIsProcessing(true);
 
         // Check if vehicle has outstanding fines
-        const fine = await parkingTicketService.checkOutstandingFines(
-          extractedText
-        );
+        const fine =
+          await parkingTicketService.checkOutstandingFines(extractedText);
 
         if (fine) {
           // Navigate to detected fine screen
@@ -219,6 +263,8 @@ const ScanPlate = () => {
             params: {
               vehicleNumber: extractedText,
               fineId: fine.id,
+              ...(params.parkingZone && { parkingZone: params.parkingZone }),
+              ...(params.parkingRate && { parkingRate: params.parkingRate }),
             },
           });
         } else {
@@ -227,6 +273,8 @@ const ScanPlate = () => {
             pathname: "/screens/parkingOwner/dashboard/undetectedFine",
             params: {
               vehicleNumber: extractedText,
+              ...(params.parkingZone && { parkingZone: params.parkingZone }),
+              ...(params.parkingRate && { parkingRate: params.parkingRate }),
             },
           });
         }
@@ -234,7 +282,7 @@ const ScanPlate = () => {
         console.error("Error checking fines:", error);
         Alert.alert(
           "Error",
-          "Failed to check outstanding fines. Please try again."
+          "Failed to check outstanding fines. Please try again.",
         );
       } finally {
         setIsProcessing(false);

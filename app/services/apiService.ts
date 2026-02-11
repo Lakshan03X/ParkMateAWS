@@ -22,7 +22,7 @@ class ApiService {
     userData: UserRegistrationData,
   ): Promise<{ status: string; message: string; userId?: string }> {
     try {
-      // Check if user already exists
+      // Check if user already exists by NIC
       const existingUser = await awsDynamoService.getItem("parkmate-users", {
         nicNumber: userData.nicNumber,
       });
@@ -31,6 +31,18 @@ class ApiService {
         return {
           status: "error",
           message: "User with this NIC already exists",
+        };
+      }
+
+      // Check if mobile number is already registered
+      const existingMobile = await this.getUserByMobileNumber(
+        userData.mobileNumber,
+      );
+      if (existingMobile.status === "success" && existingMobile.user) {
+        return {
+          status: "error",
+          message:
+            "This mobile number is already registered. Please use a different number or login with your existing account.",
         };
       }
 
@@ -122,6 +134,36 @@ class ApiService {
       };
     } catch (error: any) {
       console.error("Get User Error:", error);
+      return {
+        status: "error",
+        message: error.message || "Failed to fetch user",
+      };
+    }
+  }
+
+  // Get user by mobile number
+  async getUserByMobileNumber(
+    mobileNumber: string,
+  ): Promise<{ status: string; user?: any; message?: string }> {
+    try {
+      // Scan the users table and filter by mobile number
+      const result = await awsDynamoService.scan("parkmate-users");
+      const users = result.items || [];
+      const user = users.find((u: any) => u.mobileNumber === mobileNumber);
+
+      if (!user) {
+        return {
+          status: "error",
+          message: "User not found",
+        };
+      }
+
+      return {
+        status: "success",
+        user: user,
+      };
+    } catch (error: any) {
+      console.error("Get User by Mobile Error:", error);
       return {
         status: "error",
         message: error.message || "Failed to fetch user",

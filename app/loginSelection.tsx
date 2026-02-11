@@ -113,7 +113,7 @@ const LoginSelection = () => {
           <View style={styles.logoContainer}>
             <Image
               source={require("../assets/appImages/onboardImg.png")}
-              style={{ width: 240, height: 240 }}
+              style={{ width: 240, height: 240, zIndex: -1 }}
               resizeMode="contain"
             />
           </View>

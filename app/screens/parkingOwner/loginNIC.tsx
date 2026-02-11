@@ -36,7 +36,7 @@ const LoginNIC = () => {
     const cleaned = phone.replace(/\s+/g, "");
     if (cleaned.length >= 10) {
       return `${cleaned.substring(0, 3)} XXX X${cleaned.substring(
-        cleaned.length - 3
+        cleaned.length - 3,
       )}`;
     }
     return phone;
@@ -79,7 +79,7 @@ const LoginNIC = () => {
               text: "Sign Up",
               onPress: () => router.replace("/screens/parkingOwner/signUp"),
             },
-          ]
+          ],
         );
         setIsChecking(false);
         return;
@@ -91,7 +91,7 @@ const LoginNIC = () => {
       Alert.alert(
         "Confirm Mobile Number",
         `We will send an OTP to:\n${maskPhoneNumber(
-          user.mobileNumber
+          user.mobileNumber,
         )}\n\nIs this correct?`,
         [
           {
@@ -106,20 +106,23 @@ const LoginNIC = () => {
                 // Request OTP
                 const otpResult = await awsDemoService.requestOTP(
                   nicNumber,
-                  user.mobileNumber
+                  user.mobileNumber,
                 );
 
                 if (otpResult.status === "success") {
-                  // Navigate to OTP verification for login
+                  // Navigate to OTP verification for login with all user details
                   router.push({
                     pathname: "/screens/parkingOwner/loginOTPVerify",
                     params: {
                       transactionId: otpResult.transactionId,
                       nicNumber: nicNumber,
-                      userId: user.id,
+                      userId: user.id || user.userId,
                       fullName: user.fullName,
                       mobileNumber: user.mobileNumber,
+                      email: user.email || "",
+                      address: user.address || "",
                       maskedNumber: maskPhoneNumber(user.mobileNumber),
+                      registrationType: user.registrationType || "",
                     },
                   });
                 } else {
@@ -132,7 +135,7 @@ const LoginNIC = () => {
               }
             },
           },
-        ]
+        ],
       );
     } catch (error: any) {
       Alert.alert("Error", error.message || "An unexpected error occurred");
@@ -221,7 +224,7 @@ const LoginNIC = () => {
               style={[
                 styles.sendOtpButton,
                 (isChecking || nicNumber.length !== 12 || nicError) &&
-                styles.sendOtpButtonDisabled,
+                  styles.sendOtpButtonDisabled,
               ]}
               onPress={handleSendOTP}
               activeOpacity={0.8}

@@ -109,8 +109,46 @@ exports.handler = async (event) => {
     }
 
     if (path === "/update-item") {
+      console.log(
+        "UPDATE_ITEM request:",
+        JSON.stringify({
+          tableName: body.tableName,
+          key: body.key,
+          updates: body.updates,
+        }),
+      );
+
+      // Validate required fields
+      if (!body.tableName) {
+        console.error("UPDATE_ITEM error: Missing tableName");
+        return {
+          statusCode: 400,
+          headers,
+          body: JSON.stringify({ error: "Missing tableName" }),
+        };
+      }
+
+      if (!body.key || Object.keys(body.key).length === 0) {
+        console.error("UPDATE_ITEM error: Missing or empty key");
+        return {
+          statusCode: 400,
+          headers,
+          body: JSON.stringify({ error: "Missing or empty key" }),
+        };
+      }
+
       // Convert simple updates object to DynamoDB UpdateExpression format
       const updates = body.updates || {};
+
+      if (Object.keys(updates).length === 0) {
+        console.error("UPDATE_ITEM error: No updates provided");
+        return {
+          statusCode: 400,
+          headers,
+          body: JSON.stringify({ error: "No updates provided" }),
+        };
+      }
+
       const updateExpressionParts = [];
       const expressionAttributeNames = {};
       const expressionAttributeValues = {};
@@ -125,20 +163,40 @@ exports.handler = async (event) => {
 
       const updateExpression = `SET ${updateExpressionParts.join(", ")}`;
 
-      await dynamodb.send(
-        new UpdateCommand({
-          TableName: body.tableName,
-          Key: body.key,
-          UpdateExpression: updateExpression,
-          ExpressionAttributeNames: expressionAttributeNames,
-          ExpressionAttributeValues: expressionAttributeValues,
-        }),
-      );
-      return {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify({ success: true }),
-      };
+      console.log("UPDATE_ITEM params:", {
+        updateExpression,
+        expressionAttributeNames,
+        expressionAttributeValues,
+      });
+
+      try {
+        await dynamodb.send(
+          new UpdateCommand({
+            TableName: body.tableName,
+            Key: body.key,
+            UpdateExpression: updateExpression,
+            ExpressionAttributeNames: expressionAttributeNames,
+            ExpressionAttributeValues: expressionAttributeValues,
+          }),
+        );
+        console.log("UPDATE_ITEM success");
+        return {
+          statusCode: 200,
+          headers,
+          body: JSON.stringify({ success: true }),
+        };
+      } catch (updateError) {
+        console.error("UPDATE_ITEM DynamoDB error:", updateError);
+        return {
+          statusCode: 500,
+          headers,
+          body: JSON.stringify({
+            error: "DynamoDB update failed",
+            message: updateError.message,
+            details: updateError.toString(),
+          }),
+        };
+      }
     }
 
     if (path === "/delete-item") {

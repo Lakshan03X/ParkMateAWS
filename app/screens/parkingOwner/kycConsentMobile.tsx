@@ -16,6 +16,7 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import awsDynamoService from "../../services/awsDynamoService";
+import apiService from "../../services/apiService";
 
 const KycConsentMobile = () => {
   const router = useRouter();
@@ -35,6 +36,27 @@ const KycConsentMobile = () => {
         mobileNumber: params.mobileNumber,
         role: params.role,
       });
+
+      // Check if mobile number is already registered
+      const existingUser = await apiService.getUserByMobileNumber(
+        params.mobileNumber as string,
+      );
+
+      if (existingUser.status === "success" && existingUser.user) {
+        Alert.alert(
+          "Mobile Number Already Registered",
+          "This mobile number is already registered. Please login with your existing account or use a different number.",
+          [
+            { text: "OK", style: "cancel" },
+            {
+              text: "Login",
+              onPress: () => router.replace("/screens/parkingOwner/loginNUM"),
+            },
+          ],
+        );
+        setIsProcessing(false);
+        return;
+      }
 
       // Save user to DynamoDB (without NIC data)
       const userId = `USER_${Date.now()}_${Math.random().toString(36).substring(7)}`;

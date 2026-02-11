@@ -28,7 +28,7 @@ const ViewParking = () => {
   const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(false);
   const [selectedParking, setSelectedParking] = useState<ParkingZone | null>(
-    null
+    null,
   );
   const [parkingZones, setParkingZones] = useState<ParkingZone[]>([]);
   const [userLocation, setUserLocation] = useState({
@@ -61,7 +61,7 @@ const ViewParking = () => {
       if (foregroundStatus !== "granted") {
         Alert.alert(
           "Location Permission Required",
-          "Please enable location services to see your current position on the map."
+          "Please enable location services to see your current position on the map.",
         );
         setHasLocationPermission(false);
         return;
@@ -95,7 +95,7 @@ const ViewParking = () => {
             latitudeDelta: 0.02,
             longitudeDelta: 0.02,
           });
-        }
+        },
       );
 
       setLocationSubscription(subscription);
@@ -103,7 +103,7 @@ const ViewParking = () => {
       console.error("Error requesting location permission:", error);
       Alert.alert(
         "Error",
-        "Failed to get location. Please check your device settings."
+        "Failed to get location. Please check your device settings.",
       );
     }
   };
@@ -141,7 +141,7 @@ const ViewParking = () => {
       console.log("✅ Valid zones with coordinates:", validZones.length);
       console.log(
         "📍 Valid zones details:",
-        JSON.stringify(validZones, null, 2)
+        JSON.stringify(validZones, null, 2),
       );
 
       setParkingZones(validZones);
@@ -166,23 +166,15 @@ const ViewParking = () => {
   };
 
   const handleBookParking = (parking: ParkingZone) => {
-    Alert.alert(
-      "Book Parking",
-      `Do you want to book a spot at ${parking.municipalCouncil} - Zone ${parking.zoneCode}?`,
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
-        {
-          text: "Book Now",
-          onPress: () => {
-            Alert.alert("Success", "Parking spot booked successfully!");
-            setSelectedParking(null);
-          },
-        },
-      ]
-    );
+    // Navigate to scan plate screen to start parking process
+    router.push({
+      pathname: "/screens/parkingOwner/dashboard/scanPlate",
+      params: {
+        fromParking: "true",
+        parkingZone: `${parking.zoneCode} - ${parking.location}`,
+        parkingRate: parking.parkingRate.toString(),
+      },
+    });
   };
 
   const handleNavigateToParking = async (parking: ParkingZone) => {
@@ -223,7 +215,7 @@ const ViewParking = () => {
       console.error("Error opening maps:", error);
       Alert.alert(
         "Error",
-        "Could not open maps. Please make sure you have a maps app installed."
+        "Could not open maps. Please make sure you have a maps app installed.",
       );
     }
   };

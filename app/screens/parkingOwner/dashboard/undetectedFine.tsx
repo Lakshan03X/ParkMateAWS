@@ -12,12 +12,14 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import parkingZoneService, { ParkingZone } from "../../../services/parkingZoneService";
+import parkingZoneService, {
+  ParkingZone,
+} from "../../../services/parkingZoneService";
 
 const UndetectedFine = () => {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const { vehicleNumber } = params;
+  const { vehicleNumber, parkingZone: passedParkingZone } = params;
 
   const [parkingZone, setParkingZone] = useState("");
   const [duration, setDuration] = useState("");
@@ -32,16 +34,24 @@ const UndetectedFine = () => {
     fetchParkingZones();
   }, []);
 
+  // Auto-select parking zone if passed from viewParking screen
+  useEffect(() => {
+    if (passedParkingZone && typeof passedParkingZone === "string") {
+      setParkingZone(passedParkingZone);
+    }
+  }, [passedParkingZone]);
+
   const fetchParkingZones = async () => {
     try {
       setIsLoadingZones(true);
-      const fetchedZones = await parkingZoneService.getParkingZonesByStatus("active");
-      
+      const fetchedZones =
+        await parkingZoneService.getParkingZonesByStatus("active");
+
       // Format zones as display strings (e.g., "Zone A - Location Name")
-      const zoneNames = fetchedZones.map((zone: ParkingZone) => 
-        `${zone.zoneCode} - ${zone.location}`
+      const zoneNames = fetchedZones.map(
+        (zone: ParkingZone) => `${zone.zoneCode} - ${zone.location}`,
       );
-      
+
       setZones(zoneNames);
     } catch (error) {
       console.error("Error fetching parking zones:", error);

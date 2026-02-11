@@ -21,6 +21,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import awsDynamoService from "../../services/awsDynamoService";
 import awsDemoService from "../../services/awsDemoService";
+import apiService from "../../services/apiService";
 
 const LoginNUM = () => {
   const router = useRouter();
@@ -51,14 +52,10 @@ const LoginNUM = () => {
     setIsChecking(true);
 
     try {
-      // Check if mobile number is registered in the system
-      // Check if mobile number is registered in the system
-      // Scan users table and filter by mobile number
-      const result = await awsDynamoService.scan("parkmate-users");
-      const users = result.items || [];
-      const user = users.find((u: any) => u.mobileNumber === mobileNumber);
+      // Check if mobile number is registered in the system using the new API method
+      const result = await apiService.getUserByMobileNumber(mobileNumber);
 
-      if (!user) {
+      if (result.status !== "success" || !result.user) {
         Alert.alert(
           "Mobile Number Not Registered",
           "This mobile number is not registered in our system. Please sign up first.",
@@ -74,8 +71,15 @@ const LoginNUM = () => {
         return;
       }
 
-      const userData = user;
-      const userId = user.id || user.userId || user.docId; // Assuming id might be in different fields
+      const userData = result.user;
+      const userId = userData.id || userData.userId || userData.docId;
+
+      console.log("✅ User found with mobile number:", {
+        userId: userId,
+        fullName: userData.fullName,
+        nicNumber: userData.nicNumber,
+        email: userData.email,
+      });
 
       // Show confirmation
       Alert.alert(
@@ -98,7 +102,7 @@ const LoginNUM = () => {
                 );
 
                 if (otpResult.status === "success") {
-                  // Navigate to OTP verification for login
+                  // Navigate to OTP verification for login with all user details
                   router.push({
                     pathname: "/screens/parkingOwner/loginOTPVerify",
                     params: {
@@ -107,7 +111,10 @@ const LoginNUM = () => {
                       userId: userId,
                       fullName: userData.fullName,
                       mobileNumber: mobileNumber,
+                      email: userData.email || "",
+                      address: userData.address || "",
                       maskedNumber: mobileNumber,
+                      registrationType: userData.registrationType || "",
                     },
                   });
                 } else {

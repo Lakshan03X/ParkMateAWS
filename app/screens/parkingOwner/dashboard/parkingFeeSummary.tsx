@@ -108,7 +108,7 @@ const ParkingFeeSummary = () => {
             if (ticket?.id) {
               parkingTicketService.updateTicketCancelStatus(
                 ticket.ticketId,
-                false
+                false,
               );
             }
           }
@@ -143,7 +143,7 @@ const ParkingFeeSummary = () => {
         // If no ticketId, get all tickets and find an active one
         const allTickets = await parkingTicketService.getAllTickets();
         const activeTicket = allTickets.find(
-          (t) => t.isActive && !t.isPaid && !t.isCancelled
+          (t) => t.isActive && !t.isPaid && !t.isCancelled,
         );
 
         if (activeTicket) {
@@ -152,7 +152,7 @@ const ParkingFeeSummary = () => {
           const now = new Date();
           const timeRemaining = Math.max(
             0,
-            Math.floor((endTime.getTime() - now.getTime()) / 1000)
+            Math.floor((endTime.getTime() - now.getTime()) / 1000),
           );
 
           setTicket(activeTicket);
@@ -168,7 +168,7 @@ const ParkingFeeSummary = () => {
                 onPress: () =>
                   router.push("/screens/parkingOwner/ownerDashboard"),
               },
-            ]
+            ],
           );
         }
       }
@@ -195,7 +195,7 @@ const ParkingFeeSummary = () => {
       setIsProcessing(true);
       const updatedTicket = await parkingTicketService.extendParkingTime(
         ticket!.ticketId,
-        extendDuration
+        extendDuration,
       );
       setTicket(updatedTicket);
       setTimeRemaining(updatedTicket.timeRemaining);
@@ -215,7 +215,7 @@ const ParkingFeeSummary = () => {
     if (!canCancel) {
       Alert.alert(
         "Cannot Cancel",
-        "You can cancel the ticket after 10 minutes from creation"
+        "You can cancel the ticket after 10 minutes from creation",
       );
       return;
     }
@@ -230,7 +230,7 @@ const ParkingFeeSummary = () => {
           style: "destructive",
           onPress: confirmCancel,
         },
-      ]
+      ],
     );
   };
 
@@ -247,7 +247,7 @@ const ParkingFeeSummary = () => {
             onPress: () =>
               router.push("/screens/parkingOwner/dashboard/ownerHistory"),
           },
-        ]
+        ],
       );
     } catch (error) {
       console.error("Error cancelling ticket:", error);
@@ -259,7 +259,7 @@ const ParkingFeeSummary = () => {
 
   const handlePaymentMethodSelected = async (
     method: "stripe" | "paypal" | "payoneer",
-    phoneNumber?: string
+    phoneNumber?: string,
   ) => {
     try {
       setShowPaymentSelectionModal(false);
@@ -280,7 +280,7 @@ const ParkingFeeSummary = () => {
       console.error("Payment error:", error);
       Alert.alert(
         "Payment Failed",
-        "Failed to process payment. Please try again."
+        "Failed to process payment. Please try again.",
       );
     } finally {
       setIsProcessing(false);
@@ -298,11 +298,11 @@ const ParkingFeeSummary = () => {
 
       const receipt = await parkingTicketService.payTicket(
         ticket!.ticketId,
-        paymentId
+        paymentId,
       );
 
       const receiptInfo: ReceiptData = {
-        receiptId: receipt.id,
+        receiptId: receipt.receiptId,
         ticketId: receipt.ticketId,
         vehicleNumber: receipt.vehicleNumber,
         amount: receipt.amount,
@@ -310,8 +310,8 @@ const ParkingFeeSummary = () => {
           method === "stripe"
             ? "Stripe Card"
             : method === "paypal"
-            ? "PayPal"
-            : "Payoneer",
+              ? "PayPal"
+              : "Payoneer",
         paymentId: receipt.paymentId,
         transactionDate: receipt.transactionDate,
         type: "parking",
@@ -326,13 +326,13 @@ const ParkingFeeSummary = () => {
 
       Alert.alert(
         "Payment Successful",
-        "Your parking ticket has been paid successfully!"
+        "Your parking ticket has been paid successfully!",
       );
     } catch (error) {
       console.error("Payment error:", error);
       Alert.alert(
         "Payment Failed",
-        "Failed to process payment. Please try again."
+        "Failed to process payment. Please try again.",
       );
     } finally {
       setIsProcessing(false);
@@ -346,7 +346,7 @@ const ParkingFeeSummary = () => {
       setIsProcessing(true);
       const fileUri = await receiptService.downloadReceipt(
         receiptData,
-        receiptRef.current
+        receiptRef.current,
       );
 
       Alert.alert(
@@ -364,7 +364,7 @@ const ParkingFeeSummary = () => {
               router.push("/screens/parkingOwner/ownerDashboard");
             },
           },
-        ]
+        ],
       );
     } catch (error) {
       console.error("Error downloading receipt:", error);

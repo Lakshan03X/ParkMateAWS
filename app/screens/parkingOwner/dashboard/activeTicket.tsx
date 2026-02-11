@@ -40,6 +40,7 @@ const ActiveTicket = () => {
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
   const [verifiedPhoneNumber, setVerifiedPhoneNumber] = useState("");
+  const [hasShownTenMinuteAlert, setHasShownTenMinuteAlert] = useState(false);
 
   const extendDurations = [
     "30 minutes",
@@ -70,13 +71,37 @@ const ActiveTicket = () => {
             setShowExtendButton(true);
           }
 
+          // Show notification when time is less than or equal to 10 minutes (600 seconds)
+          if (newTime <= 600 && newTime > 595 && !hasShownTenMinuteAlert) {
+            setHasShownTenMinuteAlert(true);
+            Alert.alert(
+              "⏰ Time Running Out!",
+              "You have less than 10 minutes remaining on your parking ticket. Please pay now or extend your time to avoid a fine.",
+              [
+                {
+                  text: "Extend Time",
+                  onPress: () => setShowExtendModal(true),
+                  style: "default",
+                },
+                {
+                  text: "Pay Now",
+                  onPress: () => setShowPaymentSelectionModal(true),
+                },
+                {
+                  text: "OK",
+                  style: "cancel",
+                },
+              ],
+            );
+          }
+
           // Disable cancel button when time is 10 minutes or less (600 seconds)
           if (newTime <= 600 && canCancel) {
             setCanCancel(false);
             if (ticket?.id) {
               parkingTicketService.updateTicketCancelStatus(
                 ticket.ticketId,
-                false
+                false,
               );
             }
           }
@@ -89,7 +114,7 @@ const ActiveTicket = () => {
         clearInterval(timer);
       };
     }
-  }, [ticket, showExtendButton]);
+  }, [ticket, showExtendButton, hasShownTenMinuteAlert]);
 
   const createTicket = async () => {
     try {
@@ -97,7 +122,7 @@ const ActiveTicket = () => {
       const newTicket = await parkingTicketService.createParkingTicket(
         vehicleNumber as string,
         parkingZone as string,
-        duration as string
+        duration as string,
       );
       setTicket(newTicket);
       setTimeRemaining(newTicket.timeRemaining);
@@ -119,7 +144,7 @@ const ActiveTicket = () => {
       setIsProcessing(true);
       const updatedTicket = await parkingTicketService.extendParkingTime(
         ticket!.ticketId,
-        extendDuration
+        extendDuration,
       );
       setTicket(updatedTicket);
       setTimeRemaining(updatedTicket.timeRemaining);
@@ -139,7 +164,7 @@ const ActiveTicket = () => {
     if (!canCancel) {
       Alert.alert(
         "Cannot Cancel",
-        "You can cancel the ticket after 10 minutes from creation"
+        "You can cancel the ticket after 10 minutes from creation",
       );
       return;
     }
@@ -154,7 +179,7 @@ const ActiveTicket = () => {
           style: "destructive",
           onPress: confirmCancel,
         },
-      ]
+      ],
     );
   };
 
@@ -171,7 +196,7 @@ const ActiveTicket = () => {
             onPress: () =>
               router.push("/screens/parkingOwner/dashboard/ownerHistory"),
           },
-        ]
+        ],
       );
     } catch (error) {
       console.error("Error cancelling ticket:", error);
@@ -206,26 +231,26 @@ const ActiveTicket = () => {
                     onPress: () =>
                       router.push("/screens/parkingOwner/ownerDashboard"),
                   },
-                ]
+                ],
               );
             } catch (error) {
               console.error("Error moving ticket to fines:", error);
               Alert.alert(
                 "Error",
-                "Failed to move ticket to fines. Please try again."
+                "Failed to move ticket to fines. Please try again.",
               );
             } finally {
               setIsProcessing(false);
             }
           },
         },
-      ]
+      ],
     );
   };
 
   const handlePaymentMethodSelected = async (
     method: "stripe" | "paypal" | "payoneer",
-    phoneNumber?: string
+    phoneNumber?: string,
   ) => {
     try {
       setShowPaymentSelectionModal(false);
@@ -246,7 +271,7 @@ const ActiveTicket = () => {
       console.error("Payment error:", error);
       Alert.alert(
         "Payment Failed",
-        "Failed to process payment. Please try again."
+        "Failed to process payment. Please try again.",
       );
     } finally {
       setIsProcessing(false);
@@ -264,11 +289,11 @@ const ActiveTicket = () => {
 
       const receipt = await parkingTicketService.payTicket(
         ticket!.ticketId,
-        paymentId
+        paymentId,
       );
 
       const receiptInfo: ReceiptData = {
-        receiptId: receipt.id,
+        receiptId: receipt.receiptId,
         ticketId: receipt.ticketId,
         vehicleNumber: receipt.vehicleNumber,
         amount: receipt.amount,
@@ -276,8 +301,8 @@ const ActiveTicket = () => {
           method === "stripe"
             ? "Stripe Card"
             : method === "paypal"
-            ? "PayPal"
-            : "Payoneer",
+              ? "PayPal"
+              : "Payoneer",
         paymentId: receipt.paymentId,
         transactionDate: receipt.transactionDate,
         type: "parking",
@@ -292,13 +317,13 @@ const ActiveTicket = () => {
 
       Alert.alert(
         "Payment Successful",
-        "Your parking ticket has been paid successfully!"
+        "Your parking ticket has been paid successfully!",
       );
     } catch (error) {
       console.error("Payment error:", error);
       Alert.alert(
         "Payment Failed",
-        "Failed to process payment. Please try again."
+        "Failed to process payment. Please try again.",
       );
     } finally {
       setIsProcessing(false);
@@ -312,7 +337,7 @@ const ActiveTicket = () => {
       setIsProcessing(true);
       const fileUri = await receiptService.downloadReceipt(
         receiptData,
-        receiptRef.current
+        receiptRef.current,
       );
 
       Alert.alert(
@@ -330,7 +355,7 @@ const ActiveTicket = () => {
               router.push("/screens/parkingOwner/ownerDashboard");
             },
           },
-        ]
+        ],
       );
     } catch (error) {
       console.error("Error downloading receipt:", error);

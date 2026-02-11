@@ -20,6 +20,7 @@ import {
 } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import awsDemoService from "../../services/awsDemoService";
+import apiService from "../../services/apiService";
 
 const RegisterNUM = () => {
   const router = useRouter();
@@ -40,7 +41,7 @@ const RegisterNUM = () => {
     if (fullName.trim().length < 3) {
       Alert.alert(
         "Validation Error",
-        "Full name must be at least 3 characters"
+        "Full name must be at least 3 characters",
       );
       return false;
     }
@@ -56,7 +57,7 @@ const RegisterNUM = () => {
     if (!mobileRegex.test(mobileNumber.trim())) {
       Alert.alert(
         "Validation Error",
-        "Please enter a valid 10-digit mobile number (e.g., 0771234567)"
+        "Please enter a valid 10-digit mobile number (e.g., 0771234567)",
       );
       return false;
     }
@@ -82,10 +83,31 @@ const RegisterNUM = () => {
     setIsLoading(true);
 
     try {
+      // Check if mobile number is already registered
+      const existingUser = await apiService.getUserByMobileNumber(
+        mobileNumber.trim(),
+      );
+
+      if (existingUser.status === "success" && existingUser.user) {
+        Alert.alert(
+          "Mobile Number Already Registered",
+          "This mobile number is already registered. Please login with your existing account or use a different number.",
+          [
+            { text: "Cancel", style: "cancel" },
+            {
+              text: "Login",
+              onPress: () => router.replace("/screens/parkingOwner/loginNUM"),
+            },
+          ],
+        );
+        setIsLoading(false);
+        return;
+      }
+
       // Request OTP
       const otpResult = await awsDemoService.requestOTP(
         "", // No NIC for mobile registration
-        mobileNumber.trim()
+        mobileNumber.trim(),
       );
 
       if (otpResult.status === "success" && otpResult.transactionId) {
@@ -112,7 +134,7 @@ const RegisterNUM = () => {
                 });
               },
             },
-          ]
+          ],
         );
       } else {
         Alert.alert("Error", otpResult.message || "Failed to send OTP");
@@ -121,7 +143,7 @@ const RegisterNUM = () => {
       console.error("Registration error:", error);
       Alert.alert(
         "Error",
-        error.message || "Failed to send OTP. Please try again."
+        error.message || "Failed to send OTP. Please try again.",
       );
     } finally {
       setIsLoading(false);

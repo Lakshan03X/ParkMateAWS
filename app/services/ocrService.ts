@@ -73,12 +73,12 @@ class OCRService {
         {
           compress: 0.8,
           format: ImageManipulator.SaveFormat.JPEG,
-        }
+        },
       );
 
       const base64Image = await FileSystem.readAsStringAsync(
         enhancedImage.uri,
-        { encoding: "base64" }
+        { encoding: "base64" },
       );
 
       console.log("📤 Sending to Google Gemini AI...");
@@ -127,7 +127,7 @@ Respond with just the plate number or "NONE".`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify(requestBody),
-        }
+        },
       );
 
       if (!response.ok) {
@@ -193,12 +193,12 @@ Respond with just the plate number or "NONE".`,
         {
           compress: 0.7, // Better compression to stay under 1MB limit
           format: ImageManipulator.SaveFormat.JPEG,
-        }
+        },
       );
 
       const base64Image = await FileSystem.readAsStringAsync(
         enhancedImage.uri,
-        { encoding: "base64" }
+        { encoding: "base64" },
       );
 
       // Check file size (base64 size in KB)
@@ -214,18 +214,18 @@ Respond with just the plate number or "NONE".`,
           {
             compress: 0.5,
             format: ImageManipulator.SaveFormat.JPEG,
-          }
+          },
         );
         const smallerBase64 = await FileSystem.readAsStringAsync(
           smallerImage.uri,
-          { encoding: "base64" }
+          { encoding: "base64" },
         );
         const newSizeKB = (smallerBase64.length * 3) / 4 / 1024;
         console.log(`📦 Compressed size: ${newSizeKB.toFixed(2)} KB`);
 
         if (newSizeKB > 1024) {
           throw new Error(
-            "Image too large even after compression. Please use a smaller image."
+            "Image too large even after compression. Please use a smaller image.",
           );
         }
 
@@ -240,7 +240,7 @@ Respond with just the plate number or "NONE".`,
   }
 
   private async performOCRSpaceRequest(
-    base64Image: string
+    base64Image: string,
   ): Promise<OCRResponse> {
     try {
       console.log("📤 Sending to OCR.space (Engine 2 - License Plate Mode)...");
@@ -293,47 +293,62 @@ Respond with just the plate number or "NONE".`,
     }
   }
 
+  private isValidSriLankanProvince(code: string): boolean {
+    const validProvinces = [
+      "WP",
+      "UP",
+      "SP",
+      "NP",
+      "EP",
+      "NW",
+      "NC",
+      "SG",
+      "CP",
+    ];
+    return validProvinces.includes(code.toUpperCase());
+  }
+
   extractNumberPlate(text: string): string {
     // Clean the text - remove extra spaces and normalize
     const cleaned = text.trim().toUpperCase().replace(/\s+/g, " ");
 
-    console.log("🔍 Searching for plate pattern in:", cleaned);
+    console.log("🔍 Searching for Sri Lankan plate pattern in:", cleaned);
 
-    // Enhanced Sri Lankan number plate patterns
-    const patterns = [
-      /\b([A-Z]{2})\s*[-]?\s*([A-Z]{2,4})\s*[-]?\s*(\d{4})\b/i, // WP ABC-1234 or WP-ABC-1234
-      /\b([A-Z]{3})\s*[-]?\s*(\d{4})\b/i, // ABC-1234 or ABC 1234
-      /\b([A-Z]{2})\s*[-]?\s*(\d{4})\b/i, // WP-1234 or WP 1234
-      /\b([A-Z]{2,3})\s*([A-Z]{1,3})\s*(\d{3,4})\b/i, // Flexible pattern
-    ];
+    // Sri Lankan number plate patterns with strict validation
+    // Format: Province Code (2 letters) + 3 letters + hyphen + 4 digits
+    // Example: WP BBH-2028, UP CAR-1234
+    const strictPattern = /\b([A-Z]{2})[-\s]*([A-Z]{3})[-\s]*(\d{4})\b/i;
+    const match = cleaned.match(strictPattern);
 
-    // Try to match patterns
-    for (let pattern of patterns) {
-      const match = cleaned.match(pattern);
-      if (match) {
-        const plate = match[0].replace(/\s+/g, " ").trim();
-        console.log("✅ Found plate pattern:", plate);
+    if (match) {
+      const provinceCode = match[1];
+      const letters = match[2];
+      const numbers = match[3];
+
+      // Validate province code
+      if (this.isValidSriLankanProvince(provinceCode)) {
+        const plate = `${provinceCode} ${letters}-${numbers}`;
+        console.log("✅ Found valid Sri Lankan plate pattern:", plate);
         return plate;
+      } else {
+        console.log("⚠️ Invalid province code:", provinceCode);
       }
     }
 
-    // If no pattern matched, try to extract alphanumeric sequences
-    const words = cleaned.split(/\s+/);
-    for (let word of words) {
-      // Must have both letters and numbers, and be reasonable length
-      if (
-        /[A-Z]/.test(word) &&
-        /\d/.test(word) &&
-        word.length >= 5 &&
-        word.length <= 12
-      ) {
-        console.log("✅ Found alphanumeric match:", word);
-        return word;
-      }
+    // Try alternative formats without province code (older format)
+    const alternativePattern = /\b([A-Z]{3})[-\s]*(\d{4})\b/i;
+    const altMatch = cleaned.match(alternativePattern);
+
+    if (altMatch) {
+      const letters = altMatch[1];
+      const numbers = altMatch[2];
+      const plate = `${letters}-${numbers}`;
+      console.log("✅ Found alternative plate format:", plate);
+      return plate;
     }
 
-    console.log("⚠️ No specific pattern found, returning cleaned text");
-    return cleaned;
+    console.log("⚠️ No valid Sri Lankan number plate pattern found");
+    return "";
   }
 
   async scanNumberPlate(imageUri: string): Promise<OCRResponse> {

@@ -47,12 +47,12 @@ const DetectedFine = () => {
 
       if (!fineId) {
         await parkingTicketService.initializeSampleFine(
-          vehicleNumber as string
+          vehicleNumber as string,
         );
       }
 
       const fineData = await parkingTicketService.checkOutstandingFines(
-        vehicleNumber as string
+        vehicleNumber as string,
       );
       setFine(fineData);
     } catch (error) {
@@ -69,7 +69,7 @@ const DetectedFine = () => {
 
   const handlePaymentMethodSelected = async (
     method: "stripe" | "paypal" | "payoneer",
-    phoneNumber?: string
+    phoneNumber?: string,
   ) => {
     try {
       setShowPaymentSelectionModal(false);
@@ -90,7 +90,7 @@ const DetectedFine = () => {
       console.error("Payment error:", error);
       Alert.alert(
         "Payment Failed",
-        "Failed to process payment. Please try again."
+        "Failed to process payment. Please try again.",
       );
     } finally {
       setIsProcessing(false);
@@ -109,7 +109,7 @@ const DetectedFine = () => {
       const receipt = await parkingTicketService.payFine(fine!.id, paymentId);
 
       const receiptInfo: ReceiptData = {
-        receiptId: receipt.id,
+        receiptId: receipt.receiptId,
         ticketId: receipt.ticketId,
         vehicleNumber: receipt.vehicleNumber,
         amount: receipt.amount,
@@ -117,8 +117,8 @@ const DetectedFine = () => {
           method === "stripe"
             ? "Stripe Card"
             : method === "paypal"
-            ? "PayPal"
-            : "Payoneer",
+              ? "PayPal"
+              : "Payoneer",
         paymentId: receipt.paymentId,
         transactionDate: receipt.transactionDate,
         type: "fine",
@@ -131,13 +131,13 @@ const DetectedFine = () => {
 
       Alert.alert(
         "Payment Successful",
-        "Your fine has been paid successfully!"
+        "Your fine has been paid successfully!",
       );
     } catch (error) {
       console.error("Payment error:", error);
       Alert.alert(
         "Payment Failed",
-        "Failed to process payment. Please try again."
+        "Failed to process payment. Please try again.",
       );
     } finally {
       setIsProcessing(false);
@@ -151,7 +151,7 @@ const DetectedFine = () => {
       setIsProcessing(true);
       const fileUri = await receiptService.downloadReceipt(
         receiptData,
-        receiptRef.current
+        receiptRef.current,
       );
 
       Alert.alert(
@@ -169,7 +169,7 @@ const DetectedFine = () => {
               router.push("/screens/parkingOwner/dashboard/ownersdashboard");
             },
           },
-        ]
+        ],
       );
     } catch (error) {
       console.error("Error downloading receipt:", error);
@@ -375,7 +375,7 @@ const DetectedFine = () => {
                 onPress={() => {
                   setShowReceiptModal(false);
                   router.push(
-                    "/screens/parkingOwner/dashboard/ownersdashboard"
+                    "/screens/parkingOwner/dashboard/ownersdashboard",
                   );
                 }}
               >
