@@ -305,7 +305,11 @@ const ViewParking = () => {
                       style={[
                         styles.markerCircle,
                         {
-                          backgroundColor: "#4CAF50",
+                          backgroundColor:
+                            (parking.availableSpots ??
+                              parseInt(parking.totalParkingSpots)) > 0
+                              ? "#4CAF50"
+                              : "#F44336",
                         },
                       ]}
                     >
@@ -375,17 +379,32 @@ const ViewParking = () => {
                   {selectedParking.municipalCouncil}
                 </Text>
                 <View style={styles.availabilityRow}>
-                  <Ionicons name="car-sport" size={16} color="#4CAF50" />
+                  <Ionicons
+                    name="car-sport"
+                    size={16}
+                    color={
+                      (selectedParking.availableSpots ??
+                        parseInt(selectedParking.totalParkingSpots)) > 0
+                        ? "#4CAF50"
+                        : "#F44336"
+                    }
+                  />
                   <Text
                     style={[
                       styles.availabilityText,
                       {
-                        color: "#4CAF50",
+                        color:
+                          (selectedParking.availableSpots ??
+                            parseInt(selectedParking.totalParkingSpots)) > 0
+                            ? "#4CAF50"
+                            : "#F44336",
                       },
                     ]}
                   >
                     Zone {selectedParking.zoneCode} -{" "}
-                    {selectedParking.totalParkingSpots} spots
+                    {selectedParking.availableSpots ??
+                      selectedParking.totalParkingSpots}
+                    /{selectedParking.totalParkingSpots} available
                   </Text>
                 </View>
               </View>
@@ -479,7 +498,9 @@ const ViewParking = () => {
                     </Text>
                   </View>
                   <Text style={styles.listCardSpots}>
-                    Zone {parking.zoneCode} - {parking.totalParkingSpots} spots
+                    Zone {parking.zoneCode} -{" "}
+                    {parking.availableSpots ?? parking.totalParkingSpots}/
+                    {parking.totalParkingSpots} available
                   </Text>
                   <Text style={styles.listCardPrice}>
                     Rs. {parking.parkingRate}/hr

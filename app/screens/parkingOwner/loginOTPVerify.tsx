@@ -19,6 +19,7 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import awsDemoService from "../../services/awsDemoService";
+import authService from "../../services/authService";
 
 const LoginOTPVerify = () => {
   const router = useRouter();
@@ -156,6 +157,17 @@ const LoginOTPVerify = () => {
             console.error("Error checking profile status:", error);
           }
         }
+
+        // Save auth data to AsyncStorage for persistent login
+        await authService.login({
+          userId: params.userId as string,
+          fullName: params.fullName as string,
+          mobileNumber: params.mobileNumber as string,
+          email: params.email as string,
+          nicNumber: params.nicNumber as string,
+          profileComplete: profileComplete,
+          userType: "vehicle-owner",
+        });
 
         // Navigate to Owner Dashboard
         router.replace({

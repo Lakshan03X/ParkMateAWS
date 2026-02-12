@@ -23,7 +23,7 @@ import receiptService, { ReceiptData } from "../../../services/receiptService";
 const ActiveTicket = () => {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const { vehicleNumber, parkingZone, duration } = params;
+  const { vehicleNumber, parkingZone, parkingSection, duration } = params;
   const receiptRef = useRef<View>(null);
 
   const [ticket, setTicket] = useState<ParkingTicket | null>(null);
@@ -123,6 +123,7 @@ const ActiveTicket = () => {
         vehicleNumber as string,
         parkingZone as string,
         duration as string,
+        parkingSection as string,
       );
       setTicket(newTicket);
       setTimeRemaining(newTicket.timeRemaining);
@@ -221,10 +222,11 @@ const ActiveTicket = () => {
           onPress: async () => {
             try {
               setIsProcessing(true);
+              // Convert ticket to fine
               await parkingTicketService.convertTicketToFine(ticket!.ticketId);
               Alert.alert(
-                "Success",
-                "Ticket moved to fines. You can pay it later from the Fines section.",
+                "Moved to Fines",
+                "This ticket has been moved to your fines list. You can pay it from the Fines section.",
                 [
                   {
                     text: "OK",
@@ -234,7 +236,7 @@ const ActiveTicket = () => {
                 ],
               );
             } catch (error) {
-              console.error("Error moving ticket to fines:", error);
+              console.error("Error converting ticket to fine:", error);
               Alert.alert(
                 "Error",
                 "Failed to move ticket to fines. Please try again.",
@@ -435,6 +437,9 @@ const ActiveTicket = () => {
         <View style={styles.detailsCard}>
           <DetailRow label="Ticket ID" value={ticket.ticketId} />
           <DetailRow label="Parking Zone" value={ticket.parkingZone} />
+          {ticket.parkingSection && (
+            <DetailRow label="Parking Section" value={ticket.parkingSection} />
+          )}
           <DetailRow
             label="Start Time"
             value={formatDateTime(ticket.startTime)}
@@ -442,6 +447,34 @@ const ActiveTicket = () => {
           <DetailRow label="End Time" value={formatDateTime(ticket.endTime)} />
           <DetailRow label="Duration" value={ticket.duration} />
         </View>
+
+        {/* Parking Location Helper Card */}
+        {ticket.parkingSection && (
+          <View style={styles.locationCard}>
+            <View style={styles.locationHeader}>
+              <Ionicons name="location" size={24} color="#4CAF50" />
+              <Text style={styles.locationTitle}>Your Parking Location</Text>
+            </View>
+            <View style={styles.locationContent}>
+              <Text style={styles.locationZone}>{ticket.parkingZone}</Text>
+              <View style={styles.sectionBadge}>
+                <Text style={styles.sectionBadgeText}>
+                  {ticket.parkingSection}
+                </Text>
+              </View>
+            </View>
+            <View style={styles.locationFooter}>
+              <Ionicons
+                name="information-circle-outline"
+                size={16}
+                color="#666666"
+              />
+              <Text style={styles.locationHint}>
+                Look for this section to easily locate your vehicle
+              </Text>
+            </View>
+          </View>
+        )}
 
         <View style={styles.feeCard}>
           <Text style={styles.feeLabel}>Parking Fee</Text>
@@ -761,6 +794,69 @@ const styles = StyleSheet.create({
     color: "#000000",
     flex: 1,
     textAlign: "right",
+  },
+  locationCard: {
+    backgroundColor: "#E8F5E9",
+    padding: 20,
+    borderRadius: 12,
+    marginBottom: 20,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    borderLeftWidth: 4,
+    borderLeftColor: "#4CAF50",
+  },
+  locationHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 12,
+  },
+  locationTitle: {
+    fontSize: 16,
+    fontFamily: "Poppins-SemiBold",
+    color: "#2E7D32",
+  },
+  locationContent: {
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  locationZone: {
+    fontSize: 18,
+    fontFamily: "Poppins-Medium",
+    color: "#333333",
+    marginBottom: 12,
+  },
+  sectionBadge: {
+    backgroundColor: "#4CAF50",
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 20,
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
+  sectionBadgeText: {
+    fontSize: 24,
+    fontFamily: "Poppins-Bold",
+    color: "#FFFFFF",
+    letterSpacing: 1,
+  },
+  locationFooter: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 8,
+  },
+  locationHint: {
+    fontSize: 12,
+    fontFamily: "Poppins-Regular",
+    color: "#666666",
+    fontStyle: "italic",
   },
   feeCard: {
     backgroundColor: "#FFFFFF",

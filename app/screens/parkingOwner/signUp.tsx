@@ -40,7 +40,7 @@ const VehicleOwnerSignUp = () => {
         {/* Back Button */}
         <TouchableOpacity
           style={[styles.backButton, { top: insets.top + 10 }]}
-          onPress={() => router.replace("/loginSelection")}
+          onPress={() => router.replace("/")}
           activeOpacity={0.7}
         >
           <Ionicons name="arrow-back" size={24} color="#FFFFFF" />

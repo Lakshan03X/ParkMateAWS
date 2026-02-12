@@ -11,6 +11,8 @@ export interface ParkingZone {
   parkingRate: string;
   activeHours: string;
   totalParkingSpots: string;
+  availableSpots?: number;
+  parkingSections?: string;
   status: "active" | "inactive";
   inactiveReason?: string;
   createdAt?: any;
@@ -37,6 +39,9 @@ class ParkingZoneService {
         parkingRate: data.parkingRate,
         activeHours: data.activeHours,
         totalParkingSpots: data.totalParkingSpots,
+        availableSpots:
+          data.availableSpots ?? parseInt(data.totalParkingSpots || "0"),
+        parkingSections: data.parkingSections,
         status: data.status || "active",
         inactiveReason: data.inactiveReason,
         createdAt: data.createdAt,
@@ -77,6 +82,10 @@ class ParkingZoneService {
           latitude: data.latitude,
           longitude: data.longitude,
           parkingRate: data.parkingRate,
+          activeHours: data.activeHours,
+          totalParkingSpots: data.totalParkingSpots,
+          parkingSections: data.parkingSections,
+          status: data.status || "active",
           activeHours: data.activeHours,
           totalParkingSpots: data.totalParkingSpots,
           status: data.status || "active",
@@ -318,6 +327,116 @@ class ParkingZoneService {
     } catch (error) {
       console.error("Error getting zones by municipal council:", error);
       throw new Error("Failed to fetch zones by municipal council");
+    }
+  }
+
+  /**
+   * Decrease available spots (when parking ticket is created)
+   */
+  async decreaseAvailableSpots(parkingZone: string): Promise<void> {
+    try {
+      const result = await awsDynamoService.scan(COLLECTION_NAME);
+      const allZones = result.items || [];
+
+      // Extract zone code and location from formatted string (e.g., "Zone A - Location Name")
+      let zoneCodeToSearch = "";
+      let locationToSearch = parkingZone;
+
+      if (parkingZone.includes(" - ")) {
+        const parts = parkingZone.split(" - ");
+        zoneCodeToSearch = parts[0].trim();
+        locationToSearch = parts[1].trim();
+      }
+
+      // Find the exact zone by matching both zoneCode AND location
+      const foundZone = allZones.find((zone: any) => {
+        const zoneMatches = zoneCodeToSearch
+          ? zone.zoneCode === zoneCodeToSearch
+          : true;
+        const locationMatches = zone.location === locationToSearch;
+        return zoneMatches && locationMatches;
+      });
+
+      if (foundZone) {
+        const totalSpots = parseInt(foundZone.totalParkingSpots || "0");
+        const currentAvailable = foundZone.availableSpots ?? totalSpots;
+
+        if (currentAvailable > 0) {
+          await awsDynamoService.updateItem(
+            COLLECTION_NAME,
+            { zoneId: foundZone.id },
+            {
+              availableSpots: currentAvailable - 1,
+              updatedAt: new Date().toISOString(),
+            },
+          );
+          console.log(
+            `✅ Decreased available spots for ${foundZone.municipalCouncil} - Zone ${foundZone.zoneCode} (${foundZone.location}): ${currentAvailable} → ${currentAvailable - 1}`,
+          );
+        } else {
+          console.warn(`⚠️ No available spots in ${parkingZone}`);
+        }
+      } else {
+        console.error(`❌ Parking zone not found: ${parkingZone}`);
+      }
+    } catch (error) {
+      console.error("Error decreasing available spots:", error);
+    }
+  }
+
+  /**
+   * Increase available spots (when parking ticket is cancelled or completed)
+   */
+  async increaseAvailableSpots(parkingZone: string): Promise<void> {
+    try {
+      const result = await awsDynamoService.scan(COLLECTION_NAME);
+      const allZones = result.items || [];
+
+      // Extract zone code and location from formatted string
+      let zoneCodeToSearch = "";
+      let locationToSearch = parkingZone;
+
+      if (parkingZone.includes(" - ")) {
+        const parts = parkingZone.split(" - ");
+        zoneCodeToSearch = parts[0].trim();
+        locationToSearch = parts[1].trim();
+      }
+
+      // Find the exact zone by matching both zoneCode AND location
+      const foundZone = allZones.find((zone: any) => {
+        const zoneMatches = zoneCodeToSearch
+          ? zone.zoneCode === zoneCodeToSearch
+          : true;
+        const locationMatches = zone.location === locationToSearch;
+        return zoneMatches && locationMatches;
+      });
+
+      if (foundZone) {
+        const totalSpots = parseInt(foundZone.totalParkingSpots || "0");
+        const currentAvailable = foundZone.availableSpots ?? totalSpots;
+
+        if (currentAvailable < totalSpots) {
+          await awsDynamoService.updateItem(
+            COLLECTION_NAME,
+            { zoneId: foundZone.id },
+            {
+              availableSpots: currentAvailable + 1,
+              updatedAt: new Date().toISOString(),
+            },
+          );
+          console.log(
+            `✅ Increased available spots for ${foundZone.municipalCouncil} - Zone ${foundZone.zoneCode} (${foundZone.location}): ${currentAvailable} → ${currentAvailable + 1}`,
+          );
+        } else {
+          console.log(
+            `ℹ️ Parking zone ${parkingZone} already at full capacity (${totalSpots}/${totalSpots})`,
+          );
+        }
+      } else {
+        console.error(`❌ Parking zone not found: ${parkingZone}`);
+      }
+    } catch (error) {
+      console.error("Error increasing available spots:", error);
     }
   }
 }

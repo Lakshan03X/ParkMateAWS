@@ -66,6 +66,22 @@ const ConfigureZone = () => {
     "Social and Security Concerns",
   ];
 
+  // Calculate parking sections based on total parking spots
+  const calculateParkingSections = (totalSpots: string): string => {
+    const spots = parseInt(totalSpots);
+    if (isNaN(spots) || spots <= 0) return "";
+
+    const numSections = Math.ceil(spots / 50);
+    const sections: string[] = [];
+
+    for (let i = 0; i < numSections; i++) {
+      const sectionLetter = String.fromCharCode(65 + i); // A, B, C, D...
+      sections.push(`Section ${sectionLetter}`);
+    }
+
+    return sections.join(", ");
+  };
+
   // Form states
   const [formData, setFormData] = useState({
     municipalCouncil: "",
@@ -210,6 +226,8 @@ const ConfigureZone = () => {
         parkingRate: formData.parkingRate,
         activeHours: getActiveHoursString(),
         totalParkingSpots: formData.totalParkingSpots,
+        availableSpots: parseInt(formData.totalParkingSpots),
+        parkingSections: calculateParkingSections(formData.totalParkingSpots),
         status: "active",
       });
 
@@ -288,6 +306,7 @@ const ConfigureZone = () => {
         longitude: formData.longitude,
         parkingRate: formData.parkingRate,
         activeHours: getActiveHoursString(),
+        parkingSections: calculateParkingSections(formData.totalParkingSpots),
         totalParkingSpots: formData.totalParkingSpots,
       });
 
@@ -431,6 +450,12 @@ const ConfigureZone = () => {
           <Text style={styles.zoneSpots}>
             Total Spots: {item.totalParkingSpots}
           </Text>
+          {item.parkingSections && (
+            <View style={styles.sectionsContainer}>
+              <Ionicons name="grid-outline" size={14} color="#093F86" />
+              <Text style={styles.sectionsText}>{item.parkingSections}</Text>
+            </View>
+          )}
           {item.status === "inactive" && item.inactiveReason && (
             <View style={styles.reasonContainer}>
               <Ionicons name="information-circle" size={16} color="#F44336" />
@@ -941,6 +966,19 @@ const ConfigureZone = () => {
                     }
                     keyboardType="numeric"
                   />
+                  {formData.totalParkingSpots &&
+                    parseInt(formData.totalParkingSpots) > 0 && (
+                      <View style={styles.sectionsInfoBox}>
+                        <Ionicons
+                          name="information-circle"
+                          size={18}
+                          color="#093F86"
+                        />
+                        <Text style={styles.sectionsInfoText}>
+                          {calculateParkingSections(formData.totalParkingSpots)}
+                        </Text>
+                      </View>
+                    )}
                 </View>
               </ScrollView>
 
@@ -1252,6 +1290,19 @@ const ConfigureZone = () => {
                     }
                     keyboardType="numeric"
                   />
+                  {formData.totalParkingSpots &&
+                    parseInt(formData.totalParkingSpots) > 0 && (
+                      <View style={styles.sectionsInfoBox}>
+                        <Ionicons
+                          name="information-circle"
+                          size={18}
+                          color="#093F86"
+                        />
+                        <Text style={styles.sectionsInfoText}>
+                          {calculateParkingSections(formData.totalParkingSpots)}
+                        </Text>
+                      </View>
+                    )}
                 </View>
               </ScrollView>
 
@@ -1663,6 +1714,21 @@ const styles = StyleSheet.create({
     fontFamily: "Poppins-Regular",
     color: "#999",
   },
+  sectionsContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#E3F2FD",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
+    marginTop: 6,
+    gap: 6,
+  },
+  sectionsText: {
+    fontSize: 12,
+    fontFamily: "Poppins-Medium",
+    color: "#093F86",
+  },
   reasonContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -2034,6 +2100,22 @@ const styles = StyleSheet.create({
     color: "#666",
     marginTop: 6,
     paddingLeft: 4,
+  },
+  sectionsInfoBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#E3F2FD",
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 8,
+    marginTop: 10,
+    gap: 8,
+  },
+  sectionsInfoText: {
+    flex: 1,
+    fontSize: 13,
+    fontFamily: "Poppins-Medium",
+    color: "#093F86",
   },
   subLabel: {
     fontSize: 13,

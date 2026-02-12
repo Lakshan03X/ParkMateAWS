@@ -458,91 +458,99 @@ const ScanPlate = () => {
               </Text>
             </View>
           )}
-
-          {/* Manual Entry Modal */}
-          <Modal
-            visible={manualEntry}
-            transparent={true}
-            animationType="slide"
-            onRequestClose={() => setManualEntry(false)}
-          >
-            <View style={styles.modalOverlay}>
-              <View style={styles.modalContent}>
-                <Ionicons name="create-outline" size={60} color="#093F86" />
-                <Text style={styles.modalTitle}>Enter Number Plate</Text>
-                <Text style={styles.modalSubtitle}>
-                  Please enter the vehicle number plate manually
-                </Text>
-
-                <TextInput
-                  style={styles.manualInput}
-                  placeholder="e.g., WP ABC 1234"
-                  placeholderTextColor="#999"
-                  value={extractedText}
-                  onChangeText={setExtractedText}
-                  autoCapitalize="characters"
-                  autoFocus
-                />
-
-                <View style={styles.modalButtons}>
-                  <TouchableOpacity
-                    style={[styles.modalButton, styles.cancelButton]}
-                    onPress={() => {
-                      setManualEntry(false);
-                      setExtractedText("");
-                    }}
-                  >
-                    <Text style={styles.modalButtonText}>Cancel</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[styles.modalButton, styles.confirmButton]}
-                    onPress={handleManualConfirm}
-                  >
-                    <Text style={styles.modalButtonText}>Confirm</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </View>
-          </Modal>
-
-          {/* Result Modal */}
-          <Modal
-            visible={showResult}
-            transparent={true}
-            animationType="slide"
-            onRequestClose={handleRetake}
-          >
-            <View style={styles.modalOverlay}>
-              <View style={styles.modalContent}>
-                <Ionicons name="checkmark-circle" size={60} color="#4CAF50" />
-                <Text style={styles.modalTitle}>Number Plate Detected</Text>
-                <View style={styles.plateContainer}>
-                  <Text style={styles.plateText}>{extractedText}</Text>
-                </View>
-
-                <View style={styles.modalButtons}>
-                  <TouchableOpacity
-                    style={[styles.modalButton, styles.retakeButton]}
-                    onPress={handleRetake}
-                  >
-                    <Ionicons name="camera" size={20} color="#FFFFFF" />
-                    <Text style={styles.modalButtonText}>Retake</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[styles.modalButton, styles.confirmButton]}
-                    onPress={handleConfirm}
-                  >
-                    <Ionicons name="checkmark" size={20} color="#FFFFFF" />
-                    <Text style={styles.modalButtonText}>Confirm</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </View>
-          </Modal>
         </View>
       )}
+
+      {/* Manual Entry Modal - Available from any state */}
+      <Modal
+        visible={manualEntry}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setManualEntry(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Ionicons name="create-outline" size={60} color="#093F86" />
+            <Text style={styles.modalTitle}>Enter Number Plate</Text>
+            <Text style={styles.modalSubtitle}>
+              Please enter the vehicle number plate manually
+            </Text>
+
+            <TextInput
+              style={styles.manualInput}
+              placeholder="e.g., WP ABC 1234"
+              placeholderTextColor="#999"
+              value={extractedText}
+              onChangeText={setExtractedText}
+              autoCapitalize="characters"
+              autoFocus
+            />
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => {
+                  setManualEntry(false);
+                  setExtractedText("");
+                }}
+              >
+                <Text style={styles.modalButtonText}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.modalButton, styles.confirmButton]}
+                onPress={handleManualConfirm}
+              >
+                <Text style={styles.modalButtonText}>Confirm</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Result Modal - Available from any state */}
+      <Modal
+        visible={showResult && !manualEntry}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={handleRetake}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Ionicons name="checkmark-circle" size={60} color="#4CAF50" />
+            <Text style={styles.modalTitle}>Number Plate Detected</Text>
+            <View style={styles.plateContainer}>
+              <Text style={styles.plateText}>{extractedText}</Text>
+            </View>
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.retakeButton]}
+                onPress={handleRetake}
+                disabled={isProcessing}
+              >
+                <Ionicons name="camera" size={20} color="#FFFFFF" />
+                <Text style={styles.modalButtonText}>Retake</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.modalButton, styles.confirmButton]}
+                onPress={handleConfirm}
+                disabled={isProcessing}
+              >
+                {isProcessing ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <>
+                    <Ionicons name="checkmark" size={20} color="#FFFFFF" />
+                    <Text style={styles.modalButtonText}>Confirm</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };

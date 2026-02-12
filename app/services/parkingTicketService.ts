@@ -1,4 +1,5 @@
 import awsDynamoService from "./awsDynamoService";
+import parkingZoneService from "./parkingZoneService";
 
 export interface Fine {
   id: string;
@@ -24,6 +25,7 @@ export interface ParkingTicket {
   vehicleNumber: string;
   ticketId: string;
   parkingZone: string;
+  parkingSection?: string;
   startTime: string;
   endTime: string;
   duration: string;
@@ -200,6 +202,7 @@ class ParkingTicketService {
     vehicleNumber: string,
     parkingZone: string,
     duration: string,
+    parkingSection?: string,
   ): Promise<ParkingTicket> {
     try {
       const id = `TICKET_${Date.now()}_${Math.floor(1000 + Math.random() * 9000)}`;
@@ -212,11 +215,16 @@ class ParkingTicketService {
       const zoneRate = await this.getParkingZoneRate(parkingZone);
       const parkingFee = this.calculateParkingFeeWithRate(duration, zoneRate);
 
+      console.log(
+        `🎫 Creating ticket: Zone=${parkingZone}, Section=${parkingSection || "None"}, Duration=${duration}, Fee=Rs.${parkingFee}`,
+      );
+
       const ticketData = {
         id,
         vehicleNumber: vehicleNumber.toUpperCase(),
         ticketId,
         parkingZone,
+        parkingSection: parkingSection || "",
         startTime: startTime.toISOString(),
         endTime: endTime.toISOString(),
         duration,
@@ -232,6 +240,9 @@ class ParkingTicketService {
       };
 
       await awsDynamoService.putItem(this.TICKETS_COLLECTION, ticketData);
+
+      // Decrease available spots in the parking zone
+      await parkingZoneService.decreaseAvailableSpots(parkingZone);
 
       return ticketData as ParkingTicket;
     } catch (error) {
@@ -359,6 +370,9 @@ class ParkingTicketService {
           },
         );
 
+        // Increase available spots in the parking zone
+        await parkingZoneService.increaseAvailableSpots(ticket.parkingZone);
+
         // Remove all associated fines
         const result = await awsDynamoService.scan(this.FINES_COLLECTION);
         const allFines = result.items || [];
@@ -449,6 +463,9 @@ class ParkingTicketService {
         },
       );
 
+      // Increase available spots in the parking zone
+      await parkingZoneService.increaseAvailableSpots(ticket.parkingZone);
+
       // Create receipt
       const receiptId = `RECEIPT_${Date.now()}_${Math.floor(1000 + Math.random() * 9000)}`;
       const receiptData = {
@@ -476,6 +493,12 @@ class ParkingTicketService {
    * Parse duration string to minutes
    */
   private parseDuration(duration: string): number {
+    // Handle undefined or empty duration
+    if (!duration || typeof duration !== "string") {
+      console.warn("Invalid duration provided, using default 30 minutes");
+      return 30;
+    }
+
     // Handle formats like "30 minutes", "1 hour", "1 hour 30 minutes", "2 hours 30 minutes"
     let totalMinutes = 0;
 
@@ -506,6 +529,10 @@ class ParkingTicketService {
     const hours = minutes / 60; // Use exact hours, not rounded
     const fee = hours * ratePerHour;
 
+    console.log(
+      `💰 Fee Calculation: ${duration} (${minutes} mins) × Rs.${ratePerHour}/hr = Rs.${fee.toFixed(2)} → Rs.${Math.round(fee)}`,
+    );
+
     // Round to nearest integer (or you can use Math.ceil to round up)
     return Math.round(fee);
   }
@@ -522,9 +549,10 @@ class ParkingTicketService {
    */
   async initializeSampleFine(vehicleNumber: string): Promise<void> {
     try {
-      const id = `FINE_${Date.now()}`;
+      const id = `FINE_${Date.now()}_${Math.floor(1000 + Math.random() * 9000)}`;
       const fineData = {
         id,
+        fineId: id, // Add fineId for DynamoDB primary key
         vehicleNumber: vehicleNumber.toUpperCase(),
         ticketId: `AT${Math.floor(1000000 + Math.random() * 9000000)}`,
         entryTime: "9:41 AM",
@@ -538,6 +566,7 @@ class ParkingTicketService {
         fineAmount: 1000,
         isPaid: false,
         createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       };
 
       await awsDynamoService.putItem(this.FINES_COLLECTION, fineData);
@@ -609,6 +638,7 @@ class ParkingTicketService {
           vehicleNumber: (data.vehicleNumber as string) || "",
           ticketId: (data.ticketId as string) || "",
           parkingZone: (data.parkingZone as string) || "",
+          parkingSection: data.parkingSection as string | undefined,
           startTime: (data.startTime as string) || "",
           endTime: (data.endTime as string) || "",
           duration: (data.duration as string) || "",
@@ -645,22 +675,38 @@ class ParkingTicketService {
       if (!ticket) throw new Error("Ticket not found");
 
       // Create a fine from the ticket
-      const fineId = `FINE_${Date.now()}`;
+      const fineId = `FINE_${Date.now()}_${Math.floor(1000 + Math.random() * 9000)}`;
+      const currentDate = new Date();
       const fineData = {
         id: fineId,
+        fineId: fineId, // Add fineId for DynamoDB primary key
         vehicleNumber: ticket.vehicleNumber,
         ticketId: ticket.ticketId,
-        entryTime: ticket.startTime,
-        exitTime: ticket.endTime,
+        entryTime: new Date(ticket.startTime).toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        exitTime: new Date(ticket.endTime).toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
         duration: ticket.duration,
-        actualArrival: new Date().toISOString(),
-        fineDuration: "0 minutes",
-        fineDate: new Date().toISOString().split("T")[0],
+        actualArrival: currentDate.toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        fineDuration: "Unpaid",
+        fineDate: currentDate.toLocaleDateString("en-US", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        }),
         reason: "Pay Later - Unpaid Parking Fee",
         location: ticket.parkingZone,
         fineAmount: ticket.parkingFee,
         isPaid: false,
-        createdAt: new Date().toISOString(),
+        createdAt: currentDate.toISOString(),
+        updatedAt: currentDate.toISOString(),
       };
 
       // Add fine to AWS DynamoDB

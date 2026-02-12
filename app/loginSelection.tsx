@@ -20,12 +20,12 @@ const LoginSelection = () => {
   const insets = useSafeAreaInsets();
 
   const loginOptions = [
-    {
-      id: "vehicle-owner",
-      title: "Vehicle Owner",
-      subtitle: "Park & Pay for parking",
-      icon: "car-outline",
-    },
+    // {
+    //   id: "vehicle-owner",
+    //   title: "Vehicle Owner",
+    //   subtitle: "Park & Pay for parking",
+    //   icon: "car-outline",
+    // },
     {
       id: "parking-inspector",
       title: "Parking Inspector",

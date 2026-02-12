@@ -20,6 +20,7 @@ import {
 import awsDynamoService from "../../services/awsDynamoService";
 import awsDemoService from "../../services/awsDemoService";
 import awsS3Service from "../../services/awsS3Service";
+import authService from "../../services/authService";
 import * as ImagePicker from "expo-image-picker";
 
 const Profile = () => {
@@ -236,6 +237,15 @@ const Profile = () => {
         updateData,
       );
 
+      // Update auth data in AsyncStorage
+      await authService.updateUserData({
+        fullName,
+        mobileNumber,
+        email,
+        nicNumber: nicNumber || undefined,
+        profileComplete: nicNumber ? true : false,
+      });
+
       Alert.alert("Success", "Profile updated successfully!", [
         {
           text: "OK",
@@ -261,6 +271,30 @@ const Profile = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleLogout = () => {
+    Alert.alert("Logout", "Are you sure you want to logout?", [
+      {
+        text: "Cancel",
+        style: "cancel",
+      },
+      {
+        text: "Logout",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await authService.logout();
+            console.log("✅ User logged out");
+            // Navigate to home screen
+            router.replace("/");
+          } catch (error) {
+            console.error("Error logging out:", error);
+            Alert.alert("Error", "Failed to logout. Please try again.");
+          }
+        },
+      },
+    ]);
   };
 
   return (
@@ -490,6 +524,18 @@ const Profile = () => {
               </TouchableOpacity>
             </View>
           )}
+
+          {/* Logout Button */}
+          <View style={styles.logoutContainer}>
+            <TouchableOpacity
+              style={styles.logoutButton}
+              onPress={handleLogout}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="log-out-outline" size={24} color="#FFFFFF" />
+              <Text style={styles.logoutButtonText}>Logout</Text>
+            </TouchableOpacity>
+          </View>
         </ScrollView>
       </SafeAreaView>
     </View>
@@ -705,6 +751,29 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: "Poppins-SemiBold",
     color: "#666666",
+  },
+  logoutContainer: {
+    marginTop: 30,
+    marginBottom: 20,
+  },
+  logoutButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#D32F2F",
+    paddingVertical: 15,
+    borderRadius: 10,
+    gap: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  logoutButtonText: {
+    fontSize: 16,
+    fontFamily: "Poppins-SemiBold",
+    color: "#FFFFFF",
   },
 });
 

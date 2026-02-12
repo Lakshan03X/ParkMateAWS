@@ -446,6 +446,9 @@ const ParkingFeeSummary = () => {
         <View style={styles.detailsCard}>
           <DetailRow label="Ticket ID" value={ticket.ticketId} />
           <DetailRow label="Parking Zone" value={ticket.parkingZone} />
+          {ticket.parkingSection && (
+            <DetailRow label="Parking Section" value={ticket.parkingSection} />
+          )}
           <DetailRow
             label="Start Time"
             value={formatDateTime(ticket.startTime)}
