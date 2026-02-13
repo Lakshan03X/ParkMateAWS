@@ -15,6 +15,11 @@ export interface ParkingZone {
   parkingSections?: string;
   status: "active" | "inactive";
   inactiveReason?: string;
+  verificationStatus?: "pending" | "verified" | "rejected";
+  createdBy?: string; // MC Officer ID who created the zone
+  verifiedBy?: string; // MC Admin ID who verified/rejected
+  rejectionReason?: string;
+  assignedInspectors?: string[]; // Array of inspector IDs assigned to this zone
   createdAt?: any;
   updatedAt?: any;
 }
@@ -44,6 +49,11 @@ class ParkingZoneService {
         parkingSections: data.parkingSections,
         status: data.status || "active",
         inactiveReason: data.inactiveReason,
+        verificationStatus: data.verificationStatus || "verified", // Default to verified for backward compatibility
+        createdBy: data.createdBy,
+        verifiedBy: data.verifiedBy,
+        rejectionReason: data.rejectionReason,
+        assignedInspectors: data.assignedInspectors || [],
         createdAt: data.createdAt,
         updatedAt: data.updatedAt,
       }));
@@ -437,6 +447,124 @@ class ParkingZoneService {
       }
     } catch (error) {
       console.error("Error increasing available spots:", error);
+    }
+  }
+
+  /**
+   * Get pending parking zones waiting for verification
+   */
+  async getPendingZones(): Promise<ParkingZone[]> {
+    try {
+      const allZones = await this.getAllParkingZones();
+      return allZones.filter((zone) => zone.verificationStatus === "pending");
+    } catch (error) {
+      console.error("Error getting pending zones:", error);
+      throw new Error("Failed to fetch pending zones");
+    }
+  }
+
+  /**
+   * Get verified parking zones
+   */
+  async getVerifiedZones(): Promise<ParkingZone[]> {
+    try {
+      const allZones = await this.getAllParkingZones();
+      return allZones.filter(
+        (zone) =>
+          zone.verificationStatus === "verified" || !zone.verificationStatus,
+      );
+    } catch (error) {
+      console.error("Error getting verified zones:", error);
+      throw new Error("Failed to fetch verified zones");
+    }
+  }
+
+  /**
+   * Verify a parking zone (MC Admin)
+   */
+  async verifyZone(zoneId: string, adminId: string): Promise<void> {
+    try {
+      await awsDynamoService.updateItem(
+        COLLECTION_NAME,
+        { zoneId: zoneId },
+        {
+          verificationStatus: "verified",
+          verifiedBy: adminId,
+          status: "active",
+          updatedAt: new Date().toISOString(),
+        },
+      );
+      console.log(`✅ Zone ${zoneId} verified by admin ${adminId}`);
+    } catch (error) {
+      console.error("Error verifying zone:", error);
+      throw new Error("Failed to verify parking zone");
+    }
+  }
+
+  /**
+   * Reject a parking zone (MC Admin)
+   */
+  async rejectZone(
+    zoneId: string,
+    adminId: string,
+    reason: string,
+  ): Promise<void> {
+    try {
+      await awsDynamoService.updateItem(
+        COLLECTION_NAME,
+        { zoneId: zoneId },
+        {
+          verificationStatus: "rejected",
+          verifiedBy: adminId,
+          rejectionReason: reason,
+          status: "inactive",
+          updatedAt: new Date().toISOString(),
+        },
+      );
+      console.log(`❌ Zone ${zoneId} rejected by admin ${adminId}: ${reason}`);
+    } catch (error) {
+      console.error("Error rejecting zone:", error);
+      throw new Error("Failed to reject parking zone");
+    }
+  }
+
+  /**
+   * Assign inspectors to a parking zone
+   */
+  async assignInspectorsToZone(
+    zoneId: string,
+    inspectorIds: string[],
+  ): Promise<void> {
+    try {
+      await awsDynamoService.updateItem(
+        COLLECTION_NAME,
+        { zoneId: zoneId },
+        {
+          assignedInspectors: inspectorIds,
+          updatedAt: new Date().toISOString(),
+        },
+      );
+      console.log(
+        `✅ Assigned ${inspectorIds.length} inspectors to zone ${zoneId}`,
+      );
+    } catch (error) {
+      console.error("Error assigning inspectors to zone:", error);
+      throw new Error("Failed to assign inspectors");
+    }
+  }
+
+  /**
+   * Get zones by municipal council
+   */
+  async getZonesByCouncil(municipalCouncil: string): Promise<ParkingZone[]> {
+    try {
+      const allZones = await this.getAllParkingZones();
+      return allZones.filter(
+        (zone) => zone.municipalCouncil === municipalCouncil,
+      );
+    } catch (error) {
+      console.error("Error getting zones by council:", error);
+      throw new Error("Failed to fetch zones by council");
     }
   }
 }

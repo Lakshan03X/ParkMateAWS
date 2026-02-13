@@ -176,6 +176,68 @@ class InspectorService {
   }
 
   /**
+   * Get scanned vehicles history for an inspector
+   */
+  async getScannedVehiclesHistory(inspectorId?: string): Promise<any> {
+    try {
+      // Fetch all parking tickets
+      const ticketsResult = await awsDynamoService.scan(
+        "parkmate-parking-tickets",
+      );
+      const allTickets = ticketsResult.items || [];
+
+      // Fetch all fines
+      const finesResult = await awsDynamoService.scan("parkmate-fines");
+      const allFines = finesResult.items || [];
+
+      // Combine tickets and fines for complete history
+      const scannedVehicles = [...allTickets, ...allFines];
+
+      // Sort by date (most recent first)
+      scannedVehicles.sort((a, b) => {
+        const dateA = new Date(a.createdAt || a.fineDate || 0).getTime();
+        const dateB = new Date(b.createdAt || b.fineDate || 0).getTime();
+        return dateB - dateA;
+      });
+
+      // Calculate statistics
+      const totalScanned = scannedVehicles.length;
+      const validVehicles = allTickets.filter((t) => !t.convertedToFine).length;
+      const violatedVehicles = allFines.length;
+
+      return {
+        stats: {
+          scannedVehicles: totalScanned,
+          validVehicles: validVehicles,
+          violatedVehicles: violatedVehicles,
+        },
+        vehicles: scannedVehicles.map((item: any) => ({
+          id: item.id,
+          vehicleNumber: item.vehicleNumber,
+          ticketId: item.ticketId,
+          parkingZone: item.parkingZone || item.location,
+          parkingSection: item.parkingSection || "",
+          scanTime: item.createdAt || item.fineDate,
+          status: item.isCancelled
+            ? "cancelled"
+            : item.convertedToFine || item.reason
+              ? "violated"
+              : "valid",
+          duration: item.duration || item.fineDuration || "",
+          fee: item.parkingFee || item.fineAmount || 0,
+          isPaid: item.isPaid || false,
+          isActive: item.isActive || false,
+          reason: item.reason || "",
+          type: item.fineAmount ? "fine" : "ticket",
+        })),
+      };
+    } catch (error) {
+      console.error("Error getting scanned vehicles history:", error);
+      throw new Error("Failed to fetch scanned vehicles history");
+    }
+  }
+
+  /**
    * Get inspector by ID
    */
   async getInspectorById(inspectorId: string): Promise<Inspector | null> {

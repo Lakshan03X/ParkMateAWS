@@ -99,7 +99,7 @@ const MCOfficerDashboard = () => {
           council: i.municipalCouncil,
           zone: i.assignedZone,
           isAssigned: i.isAssigned,
-        }))
+        })),
       );
 
       // Store ALL inspectors for the picker dropdown
@@ -110,12 +110,12 @@ const MCOfficerDashboard = () => {
       const assignedInspectors = data.filter(
         (inspector) =>
           inspector.isAssigned === true ||
-          (inspector.assignedZone && inspector.assignedZone.trim() !== "")
+          (inspector.assignedZone && inspector.assignedZone.trim() !== ""),
       );
 
       console.log(
         "📋 Total assigned inspectors (all councils):",
-        assignedInspectors.length
+        assignedInspectors.length,
       );
       console.log(
         "📋 Assigned inspector details:",
@@ -123,7 +123,7 @@ const MCOfficerDashboard = () => {
           name: i.name,
           zone: i.assignedZone,
           council: i.municipalCouncil,
-        }))
+        })),
       );
 
       setInspectors(assignedInspectors);
@@ -154,7 +154,7 @@ const MCOfficerDashboard = () => {
           (inspector.assignedZone &&
             inspector.assignedZone
               .toLowerCase()
-              .includes(searchQuery.toLowerCase()))
+              .includes(searchQuery.toLowerCase())),
       );
       setFilteredInspectors(filtered);
     } else {
@@ -207,10 +207,10 @@ const MCOfficerDashboard = () => {
       setIsSaving(true);
 
       const selectedInspector = allInspectors.find(
-        (i) => i.id === assignmentData.selectedInspectorId
+        (i) => i.id === assignmentData.selectedInspectorId,
       );
       const selectedZone = parkingZones.find(
-        (z) => z.id === assignmentData.selectedZoneId
+        (z) => z.id === assignmentData.selectedZoneId,
       );
 
       if (!selectedInspector || !selectedZone) {
@@ -262,7 +262,7 @@ const MCOfficerDashboard = () => {
 
   const handleEditAssignment = (inspector: Inspector) => {
     const assignment = assignments.find(
-      (a) => a.inspectorId === inspector.id && a.status === "active"
+      (a) => a.inspectorId === inspector.id && a.status === "active",
     );
 
     if (assignment) {
@@ -303,10 +303,10 @@ const MCOfficerDashboard = () => {
       setIsSaving(true);
 
       const selectedInspector = inspectors.find(
-        (i) => i.id === assignmentData.selectedInspectorId
+        (i) => i.id === assignmentData.selectedInspectorId,
       );
       const selectedZone = parkingZones.find(
-        (z) => z.id === assignmentData.selectedZoneId
+        (z) => z.id === assignmentData.selectedZoneId,
       );
 
       if (!selectedInspector || !selectedZone) {
@@ -333,7 +333,7 @@ const MCOfficerDashboard = () => {
                 startTime: assignmentData.startTime,
                 endTime: assignmentData.endTime,
               }
-            : a
+            : a,
         );
         setAssignments(updatedAssignments);
       }
@@ -383,7 +383,7 @@ const MCOfficerDashboard = () => {
 
       // Remove from assignments list
       setAssignments((prev) =>
-        prev.filter((a) => a.inspectorId !== selectedAssignment.inspectorId)
+        prev.filter((a) => a.inspectorId !== selectedAssignment.inspectorId),
       );
 
       await loadInspectors();
@@ -497,7 +497,7 @@ const MCOfficerDashboard = () => {
         </View>
 
         {/* Assign Button */}
-        <View style={styles.assignButtonContainer}>
+        {/* <View style={styles.assignButtonContainer}>
           <TouchableOpacity
             style={styles.assignButton}
             onPress={handleOpenAssignModal}
@@ -506,6 +506,43 @@ const MCOfficerDashboard = () => {
             <Text style={styles.assignButtonText}>
               Assign parking inspectors
             </Text>
+          </TouchableOpacity>
+        </View> */}
+
+        {/* Zone Management Buttons */}
+        <View style={styles.zoneManagementContainer}>
+          <TouchableOpacity
+            style={styles.zoneButton}
+            onPress={() =>
+              router.push({
+                pathname: "/screens/mcOfficer/addParkingZone",
+                params: {
+                  selectedCouncil: params.selectedCouncil,
+                  officerId: params.officerId || "OFFICER_001",
+                },
+              })
+            }
+            activeOpacity={0.8}
+          >
+            <Ionicons name="add-circle-outline" size={20} color="#4CAF50" />
+            <Text style={styles.zoneButtonText}>Add Parking Zone</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.zoneButton}
+            onPress={() =>
+              router.push({
+                pathname: "/screens/mcOfficer/assignInspectorsToZone",
+                params: {
+                  selectedCouncil: params.selectedCouncil,
+                  officerId: params.officerId || "OFFICER_001",
+                },
+              })
+            }
+            activeOpacity={0.8}
+          >
+            <Ionicons name="people-outline" size={20} color="#2196F3" />
+            <Text style={styles.zoneButtonText}>Assign to Zones</Text>
           </TouchableOpacity>
         </View>
 
@@ -1123,6 +1160,35 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: "Poppins-SemiBold",
     color: "#FFFFFF",
+  },
+  zoneManagementContainer: {
+    flexDirection: "row",
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    gap: 12,
+  },
+  zoneButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+    gap: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  zoneButtonText: {
+    fontSize: 13,
+    fontFamily: "Poppins-SemiBold",
+    color: "#333",
   },
   sectionTitleContainer: {
     paddingHorizontal: 16,

@@ -7,6 +7,7 @@ import {
   ScrollView,
   StatusBar,
   ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { useRouter } from "expo-router";
 import {
@@ -14,6 +15,7 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import inspectorService from "../../services/inspectorService";
 
 interface HistoryStats {
   scannedVehicles: number;
@@ -21,14 +23,20 @@ interface HistoryStats {
   violatedVehicles: number;
 }
 
-interface ActivityRecord {
+interface VehicleRecord {
   id: string;
-  zoneName: string;
-  timeRange: string;
-  date: string;
-  scannedVehicles: number;
-  validVehicles: number;
-  violatedVehicles: number;
+  vehicleNumber: string;
+  ticketId: string;
+  parkingZone: string;
+  parkingSection: string;
+  scanTime: string;
+  status: "valid" | "violated" | "cancelled";
+  duration: string;
+  fee: number;
+  isPaid: boolean;
+  isActive: boolean;
+  reason: string;
+  type: "ticket" | "fine";
 }
 
 const InspectorHistory = () => {
@@ -36,42 +44,15 @@ const InspectorHistory = () => {
   const insets = useSafeAreaInsets();
 
   const [historyStats, setHistoryStats] = useState<HistoryStats>({
-    scannedVehicles: 2800,
-    validVehicles: 2450,
-    violatedVehicles: 350,
+    scannedVehicles: 0,
+    validVehicles: 0,
+    violatedVehicles: 0,
   });
 
-  const [activities, setActivities] = useState<ActivityRecord[]>([
-    {
-      id: "1",
-      zoneName: "Zone A - School Lane",
-      timeRange: "From 8.00 AM to 2.00 PM",
-      date: "28/07/2025",
-      scannedVehicles: 54,
-      validVehicles: 49,
-      violatedVehicles: 5,
-    },
-    {
-      id: "2",
-      zoneName: "Zone B - Market Road",
-      timeRange: "From 3.00 PM to 5.00 PM",
-      date: "26/07/2025",
-      scannedVehicles: 42,
-      validVehicles: 38,
-      violatedVehicles: 4,
-    },
-    {
-      id: "3",
-      zoneName: "Zone C - Hospital Road",
-      timeRange: "From 8.00 AM to 2.00 PM",
-      date: "24/07/2025",
-      scannedVehicles: 61,
-      validVehicles: 55,
-      violatedVehicles: 6,
-    },
-  ]);
-
-  const [isLoading, setIsLoading] = useState(false);
+  const [vehicles, setVehicles] = useState<VehicleRecord[]>([]);
+  const [expandedCard, setExpandedCard] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     loadHistory();
@@ -80,10 +61,15 @@ const InspectorHistory = () => {
   const loadHistory = async () => {
     setIsLoading(true);
     try {
-      // TODO: Fetch history from service
-      // const history = await inspectorService.getHistory();
-      // setHistoryStats(history.stats);
-      // setActivities(history.activities);
+      const historyData = await inspectorService.getScannedVehiclesHistory();
+
+      console.log("📊 History loaded:", {
+        total: historyData.vehicles.length,
+        stats: historyData.stats,
+      });
+
+      setHistoryStats(historyData.stats);
+      setVehicles(historyData.vehicles);
     } catch (error) {
       console.error("Failed to load history:", error);
     } finally {
@@ -91,9 +77,171 @@ const InspectorHistory = () => {
     }
   };
 
-  const handleActivityPress = (activity: ActivityRecord) => {
-    console.log("Activity pressed:", activity.id);
-    // Navigate to activity details if needed
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadHistory();
+    setRefreshing(false);
+  };
+
+  const toggleCard = (vehicleId: string) => {
+    setExpandedCard(expandedCard === vehicleId ? null : vehicleId);
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  };
+
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "valid":
+        return "#6EAD6E";
+      case "violated":
+        return "#FF4444";
+      case "cancelled":
+        return "#FF9800";
+      default:
+        return "#666666";
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case "valid":
+        return "checkmark-circle";
+      case "violated":
+        return "alert-circle";
+      case "cancelled":
+        return "close-circle";
+      default:
+        return "ellipse";
+    }
+  };
+
+  const renderVehicleCard = (vehicle: VehicleRecord) => {
+    const isExpanded = expandedCard === vehicle.id;
+    const statusColor = getStatusColor(vehicle.status);
+
+    return (
+      <TouchableOpacity
+        key={vehicle.id}
+        style={styles.vehicleCard}
+        onPress={() => toggleCard(vehicle.id)}
+        activeOpacity={0.7}
+      >
+        <View style={styles.cardHeader}>
+          <View style={styles.vehicleInfo}>
+            <Text style={styles.vehicleNumber}>{vehicle.vehicleNumber}</Text>
+            <Text style={styles.ticketId}>#{vehicle.ticketId}</Text>
+          </View>
+          <View style={[styles.statusBadge, { backgroundColor: statusColor }]}>
+            <Ionicons
+              name={getStatusIcon(vehicle.status) as any}
+              size={16}
+              color="#FFFFFF"
+            />
+            <Text style={styles.statusText}>
+              {vehicle.status.toUpperCase()}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.cardInfo}>
+          <View style={styles.infoRow}>
+            <Ionicons name="location" size={16} color="#666666" />
+            <Text style={styles.infoText}>
+              {vehicle.parkingZone}
+              {vehicle.parkingSection ? ` - ${vehicle.parkingSection}` : ""}
+            </Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Ionicons name="time" size={16} color="#666666" />
+            <Text style={styles.infoText}>
+              {formatDate(vehicle.scanTime)} at {formatTime(vehicle.scanTime)}
+            </Text>
+          </View>
+        </View>
+
+        {isExpanded && (
+          <View style={styles.expandedInfo}>
+            <View style={styles.divider} />
+
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Type:</Text>
+              <Text style={styles.detailValue}>
+                {vehicle.type === "fine" ? "Fine" : "Parking Ticket"}
+              </Text>
+            </View>
+
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Duration:</Text>
+              <Text style={styles.detailValue}>
+                {vehicle.duration || "N/A"}
+              </Text>
+            </View>
+
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Fee:</Text>
+              <Text style={styles.detailValue}>
+                Rs. {vehicle.fee.toFixed(2)}
+              </Text>
+            </View>
+
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Payment Status:</Text>
+              <Text
+                style={[
+                  styles.detailValue,
+                  { color: vehicle.isPaid ? "#6EAD6E" : "#FF4444" },
+                ]}
+              >
+                {vehicle.isPaid ? "Paid" : "Unpaid"}
+              </Text>
+            </View>
+
+            {vehicle.reason && (
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Reason:</Text>
+                <Text style={[styles.detailValue, { flex: 1 }]}>
+                  {vehicle.reason}
+                </Text>
+              </View>
+            )}
+
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Status:</Text>
+              <Text style={styles.detailValue}>
+                {vehicle.isActive ? "Active" : "Completed"}
+              </Text>
+            </View>
+          </View>
+        )}
+
+        <View style={styles.cardFooter}>
+          <Text style={styles.expandHint}>
+            {isExpanded ? "Tap to collapse" : "Tap to view details"}
+          </Text>
+          <Ionicons
+            name={isExpanded ? "chevron-up" : "chevron-down"}
+            size={20}
+            color="#999999"
+          />
+        </View>
+      </TouchableOpacity>
+    );
   };
 
   return (
@@ -120,6 +268,13 @@ const InspectorHistory = () => {
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={["#6EAD6E"]}
+            />
+          }
         >
           {isLoading ? (
             <View style={styles.loadingContainer}>
@@ -153,34 +308,19 @@ const InspectorHistory = () => {
                 </View>
               </View>
 
-              {/* Last Activities Section */}
-              <View style={styles.activitiesSection}>
-                <Text style={styles.sectionTitle}>Last Activities</Text>
+              {/* Scanned Vehicles Section */}
+              <View style={styles.vehiclesSection}>
+                <Text style={styles.sectionTitle}>
+                  Scanned Vehicles ({vehicles.length})
+                </Text>
 
-                {activities.map((activity) => (
-                  <TouchableOpacity
-                    key={activity.id}
-                    style={styles.activityCard}
-                    onPress={() => handleActivityPress(activity)}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.activityZone}>{activity.zoneName}</Text>
-                    <Text style={styles.activityTime}>
-                      {activity.timeRange}
-                    </Text>
-                    <Text style={styles.activityDate}>{activity.date}</Text>
-                  </TouchableOpacity>
-                ))}
+                {vehicles.map((vehicle) => renderVehicleCard(vehicle))}
 
-                {activities.length === 0 && (
+                {vehicles.length === 0 && (
                   <View style={styles.emptyState}>
-                    <Ionicons
-                      name="document-text-outline"
-                      size={64}
-                      color="#CCCCCC"
-                    />
+                    <Ionicons name="car-outline" size={64} color="#CCCCCC" />
                     <Text style={styles.emptyStateText}>
-                      No activity history yet
+                      No scanned vehicles yet
                     </Text>
                   </View>
                 )}
@@ -278,7 +418,7 @@ const styles = StyleSheet.create({
     height: 60,
     backgroundColor: "#E0E0E0",
   },
-  activitiesSection: {
+  vehiclesSection: {
     flex: 1,
   },
   sectionTitle: {
@@ -287,7 +427,7 @@ const styles = StyleSheet.create({
     color: "#000000",
     marginBottom: 16,
   },
-  activityCard: {
+  vehicleCard: {
     backgroundColor: "#FFFFFF",
     borderRadius: 12,
     padding: 16,
@@ -298,22 +438,89 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  activityZone: {
-    fontSize: 16,
-    fontFamily: "Poppins-SemiBold",
+  cardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  vehicleInfo: {
+    flex: 1,
+  },
+  vehicleNumber: {
+    fontSize: 18,
+    fontFamily: "Poppins-Bold",
     color: "#000000",
+    marginBottom: 2,
+  },
+  ticketId: {
+    fontSize: 12,
+    fontFamily: "Poppins-Regular",
+    color: "#999999",
+  },
+  statusBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 16,
+    gap: 4,
+  },
+  statusText: {
+    fontSize: 11,
+    fontFamily: "Poppins-SemiBold",
+    color: "#FFFFFF",
+  },
+  cardInfo: {
+    gap: 8,
+  },
+  infoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  infoText: {
+    fontSize: 14,
+    fontFamily: "Poppins-Regular",
+    color: "#666666",
+    flex: 1,
+  },
+  expandedInfo: {
+    marginTop: 12,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: "#E0E0E0",
+    marginBottom: 12,
+  },
+  detailRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 8,
   },
-  activityTime: {
+  detailLabel: {
     fontSize: 14,
-    fontFamily: "Poppins-Regular",
+    fontFamily: "Poppins-SemiBold",
     color: "#666666",
-    marginBottom: 4,
   },
-  activityDate: {
+  detailValue: {
     fontSize: 14,
     fontFamily: "Poppins-Regular",
-    color: "#666666",
+    color: "#000000",
+    textAlign: "right",
+  },
+  cardFooter: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 8,
+    gap: 4,
+  },
+  expandHint: {
+    fontSize: 12,
+    fontFamily: "Poppins-Regular",
+    color: "#999999",
   },
   emptyState: {
     flex: 1,

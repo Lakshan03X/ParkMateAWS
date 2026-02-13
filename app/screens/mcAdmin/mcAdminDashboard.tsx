@@ -68,8 +68,23 @@ const McAdminDashboard = () => {
             <Text style={styles.sectionTitle}>System Management</Text>
 
             <View style={styles.buttonContainer}>
-              {/* Configure Zone Button */}
+              {/* Pending Zones Verification Button */}
               <TouchableOpacity
+                style={[styles.actionButton, styles.warningButton]}
+                onPress={() => {
+                  console.log("Navigate to Pending Zones");
+                  router.push("/screens/mcAdmin/pendingZonesVerification");
+                }}
+                activeOpacity={0.8}
+              >
+                <View style={styles.buttonContent}>
+                  <Ionicons name="time-outline" size={20} color="#FFFFFF" />
+                  <Text style={styles.buttonText}>Verify Pending Zones</Text>
+                </View>
+              </TouchableOpacity>
+
+              {/* Configure Zone Button */}
+              {/* <TouchableOpacity
                 style={[styles.actionButton, styles.primaryButton]}
                 onPress={() => {
                   console.log("Navigate to Configure Zone");
@@ -78,7 +93,7 @@ const McAdminDashboard = () => {
                 activeOpacity={0.8}
               >
                 <Text style={styles.buttonText}>Configure Zone</Text>
-              </TouchableOpacity>
+              </TouchableOpacity> */}
 
               {/* Parking Revenue Button */}
               <TouchableOpacity
@@ -220,6 +235,15 @@ const styles = StyleSheet.create({
   },
   quaternaryButton: {
     backgroundColor: "#093F86",
+  },
+  warningButton: {
+    backgroundColor: "#FF9800",
+  },
+  buttonContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
   },
   buttonText: {
     fontSize: 16,
