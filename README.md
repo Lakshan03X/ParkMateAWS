@@ -59,7 +59,7 @@ Get a free Google Gemini API key:
 
 - Visit https://aistudio.google.com/app/apikey
 - Copy your API key
-- Update `EXPO_PUBLIC_GEMINI_API_KEY` in [.env.example](.env.example)
+- Update `EXPO_PUBLIC_GEMINI_API_KEY` in [.env](.env)
 
 ### 5. Start the App
 
@@ -186,7 +186,7 @@ Open the app in:
 ## 📚 Documentation
 
 - **[AWS_SETUP.md](./AWS_SETUP.md)** - Complete AWS backend setup guide
-- **[.env.example](.env.example)** - Environment configuration template
+- **[.env](.env)** - Environment configuration file
 
 ---
 
@@ -233,7 +233,7 @@ npx expo build:ios
 **3. "OCR not working"**
 
 - Get free Gemini API key from https://aistudio.google.com/app/apikey
-- Update `EXPO_PUBLIC_GEMINI_API_KEY` in [.env.example](.env.example)
+- Update `EXPO_PUBLIC_GEMINI_API_KEY` in [.env](.env)
 
 **4. "Image upload failed"**
 

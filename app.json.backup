@@ -82,26 +82,26 @@
       "reactCompiler": true
     },
     "extra": {
-      "API_URL": "http://localhost:3000/api",
-      "API_KEY": "your-api-key",
+      "API_URL": "${API_URL}",
+      "API_KEY": "${API_KEY}",
       "router": {},
       "eas": {
         "projectId": "666308ec-e28c-4781-8f91-51deb67c5ca6"
       },
-      "AWS_REGION": "us-east-1",
-      "AWS_USER_POOL_ID": "your-aws-user-pool-id",
-      "AWS_USER_POOL_CLIENT_ID": "your-aws-user-pool-client-id",
-      "AWS_IDENTITY_POOL_ID": "your-aws-identity-pool-id",
-      "AWS_API_GATEWAY_URL": "https://od94yekwuc.execute-api.us-east-1.amazonaws.com/prod",
-      "AWS_S3_BUCKET": "parkmate-uploads",
-      "MOSIP_BASE_URL": "https://api.mosip.net",
-      "MOSIP_CLIENT_ID": "your_mosip_client_id",
-      "MOSIP_CLIENT_SECRET": "your_mosip_client_secret",
-      "MOSIP_REDIRECT_URI": "your_redirect_uri",
-      "MOSIP_AUTH_ENDPOINT": "/v1/authmanager/authenticate",
-      "MOSIP_ESIGNET_ENDPOINT": "/v1/esignet",
-      "GOOGLE_CLOUD_VISION_API_KEY": "AIzaSyCHfV0XVhkM-HPDkv0Ev3pojPACCY_FyHs",
-      "EXPO_PUBLIC_GEMINI_API_KEY": ""
+      "AWS_REGION": "${AWS_REGION}",
+      "AWS_USER_POOL_ID": "${AWS_USER_POOL_ID}",
+      "AWS_USER_POOL_CLIENT_ID": "${AWS_USER_POOL_CLIENT_ID}",
+      "AWS_IDENTITY_POOL_ID": "${AWS_IDENTITY_POOL_ID}",
+      "AWS_API_GATEWAY_URL": "${AWS_API_GATEWAY_URL}",
+      "AWS_S3_BUCKET": "${AWS_S3_BUCKET}",
+      "MOSIP_BASE_URL": "${MOSIP_BASE_URL}",
+      "MOSIP_CLIENT_ID": "${MOSIP_CLIENT_ID}",
+      "MOSIP_CLIENT_SECRET": "${MOSIP_CLIENT_SECRET}",
+      "MOSIP_REDIRECT_URI": "${MOSIP_REDIRECT_URI}",
+      "MOSIP_AUTH_ENDPOINT": "${MOSIP_AUTH_ENDPOINT}",
+      "MOSIP_ESIGNET_ENDPOINT": "${MOSIP_ESIGNET_ENDPOINT}",
+      "GOOGLE_CLOUD_VISION_API_KEY": "${GOOGLE_CLOUD_VISION_API_KEY}",
+      "EXPO_PUBLIC_GEMINI_API_KEY": "${EXPO_PUBLIC_GEMINI_API_KEY}"
     },
     "owner": "lakshan03xs-organization"
   }

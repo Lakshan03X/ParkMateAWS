@@ -129,7 +129,8 @@ const RegisterNUM = () => {
                     mobileNumber: mobileNumber.trim(),
                     email: email.trim(),
                     registrationType: "mobile",
-                    role: "parkingOwner",
+                    role: "vehicle_owner",
+                    userType: "vehicle_owner",
                   },
                 });
               },

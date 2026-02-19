@@ -66,7 +66,8 @@ const KycConsentMobile = () => {
         fullName: params.fullName as string,
         mobileNumber: params.mobileNumber as string,
         email: (params.email as string) || "",
-        role: (params.role as string) || "parkingOwner",
+        role: (params.role as string) || "vehicle_owner",
+        userType: (params.userType as string) || "vehicle_owner",
         registrationType: "mobile",
         nicNumber: `PENDING_${userId}`, // Unique placeholder for mobile registration (GSI requires non-null value)
         address: "",

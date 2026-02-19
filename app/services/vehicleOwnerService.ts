@@ -64,7 +64,12 @@ class VehicleOwnerService {
         userId: id, // DynamoDB partition key
         id,
         ...ownerData,
+        role: "vehicle_owner", // Role for vehicle owner
         userType: "vehicle_owner", // Identify as vehicle owner
+        registrationType: "admin", // Created by admin
+        nicNumber: `PENDING_${id}`, // Placeholder NIC - user must complete profile
+        verified: false, // User needs to verify NIC
+        profileComplete: false, // Profile needs completion
         status: ownerData.status || "online",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),

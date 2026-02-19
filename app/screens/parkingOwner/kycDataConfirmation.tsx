@@ -44,7 +44,8 @@ const KycDataConfirmation = () => {
         address: params.address as string,
         mobileNumber: params.mobileNumber as string,
         email: (params.email as string) || "",
-        role: (params.role as string) || "parkingOwner",
+        role: (params.role as string) || "vehicle_owner",
+        userType: (params.userType as string) || "vehicle_owner",
         createdAt: new Date(),
         verified: true,
       });
@@ -72,7 +73,7 @@ const KycDataConfirmation = () => {
         console.log("❌ Registration failed:", result.message);
         Alert.alert(
           "Registration Failed",
-          result.message || "Unable to complete registration"
+          result.message || "Unable to complete registration",
         );
         setIsProcessing(false);
       }

@@ -434,14 +434,21 @@ const Profile = () => {
                   ]}
                   value={nicNumber}
                   onChangeText={setNicNumber}
-                  editable={isEditing && registrationType === "mobile"}
+                  editable={
+                    isEditing &&
+                    (registrationType === "mobile" ||
+                      !registrationType ||
+                      nicNumber?.startsWith("PENDING_"))
+                  }
                   keyboardType="numeric"
                   maxLength={12}
                   placeholder="Enter 12-digit NIC"
                   placeholderTextColor="#999"
                 />
                 {isEditing &&
-                  registrationType === "mobile" &&
+                  (registrationType === "mobile" ||
+                    !registrationType ||
+                    nicNumber?.startsWith("PENDING_")) &&
                   nicNumber.length === 12 && (
                     <TouchableOpacity
                       style={styles.verifyButton}
@@ -456,11 +463,13 @@ const Profile = () => {
                     </TouchableOpacity>
                   )}
               </View>
-              {registrationType !== "mobile" && (
-                <Text style={styles.helperText}>
-                  NIC number cannot be changed (registered with NIC)
-                </Text>
-              )}
+              {registrationType === "nic" &&
+                nicNumber &&
+                !nicNumber?.startsWith("PENDING_") && (
+                  <Text style={styles.helperText}>
+                    NIC number cannot be changed (registered with NIC)
+                  </Text>
+                )}
             </View>
 
             {/* Address */}

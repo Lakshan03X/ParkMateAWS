@@ -131,7 +131,8 @@ const OtpVerifyNumber = () => {
             fullName: params.fullName,
             mobileNumber: params.mobileNumber,
             email: params.email || "",
-            role: params.role || "parkingOwner",
+            role: params.role || "vehicle_owner",
+            userType: params.userType || "vehicle_owner",
             registrationType: "mobile",
           },
         });

@@ -117,7 +117,7 @@ const OtpVerify = () => {
       // Verify OTP with the transaction ID
       const result = await awsDemoService.verifyOTP(
         params.transactionId as string,
-        enteredOtp
+        enteredOtp,
       );
 
       if (result.status === "success" && result.verified) {
@@ -125,7 +125,7 @@ const OtpVerify = () => {
 
         // Fetch the full NIC data including DOB and gender
         const nicData = await awsDemoService.verifyNIC(
-          params.nicNumber as string
+          params.nicNumber as string,
         );
 
         // Navigate to KYC Consent with complete registration data including DOB
@@ -140,7 +140,8 @@ const OtpVerify = () => {
             gender: nicData.data?.gender || "",
             mobileNumber: params.mobileNumber,
             email: params.email || "",
-            role: params.role || "parkingOwner",
+            role: params.role || "vehicle_owner",
+            userType: params.userType || "vehicle_owner",
           },
         });
       } else {
@@ -169,7 +170,7 @@ const OtpVerify = () => {
     try {
       const result = await awsDemoService.requestOTP(
         params.nicNumber as string,
-        params.mobileNumber as string
+        params.mobileNumber as string,
       );
 
       if (result.status === "success") {
@@ -282,7 +283,7 @@ const OtpVerify = () => {
               style={[
                 styles.confirmButton,
                 (isVerifying || otp.some((d) => !d)) &&
-                styles.confirmButtonDisabled,
+                  styles.confirmButtonDisabled,
               ]}
               onPress={handleConfirm}
               activeOpacity={0.8}

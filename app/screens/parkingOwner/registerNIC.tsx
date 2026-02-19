@@ -58,7 +58,7 @@ const RegisterNIC = () => {
             setVerificationError("");
           } else {
             setVerificationError(
-              "NIC not found. Please use a valid demo NIC below."
+              "NIC not found. Please use a valid demo NIC below.",
             );
             setIsVerified(false);
           }
@@ -92,7 +92,7 @@ const RegisterNIC = () => {
     if (!nicNumber || nicNumber.length !== 12) {
       Alert.alert(
         "Validation Error",
-        "Please enter a valid 12-digit NIC number"
+        "Please enter a valid 12-digit NIC number",
       );
       return;
     }
@@ -100,7 +100,7 @@ const RegisterNIC = () => {
     if (!isVerified) {
       Alert.alert(
         "Verification Required",
-        "Please wait for NIC verification to complete"
+        "Please wait for NIC verification to complete",
       );
       return;
     }
@@ -117,7 +117,7 @@ const RegisterNIC = () => {
       const result = await apiService.initiateRegistration(
         nicNumber,
         mobileNumber,
-        email
+        email,
       );
 
       if (result.status === "success" && result.transactionId) {
@@ -133,13 +133,14 @@ const RegisterNIC = () => {
             address: address,
             mobileNumber: mobileNumber,
             email: email || "",
-            role: "parkingOwner",
+            role: "vehicle_owner",
+            userType: "vehicle_owner",
           },
         });
       } else {
         Alert.alert(
           "Registration Failed",
-          result.message || "Unable to proceed with registration"
+          result.message || "Unable to proceed with registration",
         );
       }
     } catch (error: any) {
