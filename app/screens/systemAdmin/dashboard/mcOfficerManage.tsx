@@ -358,15 +358,32 @@ const MCOfficerManage = () => {
 
     try {
       setIsSaving(true);
+      console.log("Attempting to delete officer:", {
+        id: selectedOfficer.id,
+        name: selectedOfficer.name,
+        email: selectedOfficer.email,
+      });
+      
       await mcOfficerService.deleteOfficer(selectedOfficer.id);
+      
+      console.log("Delete successful, reloading data...");
       await loadData();
+      
       setShowDeleteModal(false);
       setSuccessMessage("Successfully deleted Municipal Council Officer");
       setShowSuccessModal(true);
       setSelectedOfficer(null);
     } catch (error: any) {
       console.error("Error deleting officer:", error);
-      Alert.alert("Error", error.message || "Failed to delete officer");
+      console.error("Error details:", {
+        message: error.message,
+        response: error.response,
+        stack: error.stack,
+      });
+      Alert.alert(
+        "Delete Failed",
+        error.message || "Failed to delete officer. Please try again."
+      );
     } finally {
       setIsSaving(false);
     }
@@ -1169,6 +1186,51 @@ const MCOfficerManage = () => {
         </View>
       </Modal>
 
+      {/* Delete Confirmation Modal */}
+      <Modal
+        visible={showDeleteModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowDeleteModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.deleteModalContent}>
+            <View style={styles.deleteIconContainer}>
+              <Ionicons name="warning" size={80} color="#FF6B6B" />
+            </View>
+            <Text style={styles.deleteTitle}>Delete Officer?</Text>
+            <Text style={styles.deleteMessage}>
+              Are you sure you want to delete {selectedOfficer?.name}? This
+              action cannot be undone.
+            </Text>
+            <View style={styles.deleteButtonsContainer}>
+              <TouchableOpacity
+                style={[styles.deleteActionButton, styles.cancelButton]}
+                onPress={() => setShowDeleteModal(false)}
+                disabled={isSaving}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.deleteActionButton,
+                  styles.confirmDeleteButton,
+                  isSaving && styles.saveButtonDisabled,
+                ]}
+                onPress={confirmDelete}
+                disabled={isSaving}
+              >
+                {isSaving ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.confirmDeleteButtonText}>Delete</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       {/* Success Modal */}
       <Modal
         visible={showSuccessModal}
@@ -1572,6 +1634,58 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   successButtonText: {
+    fontSize: 16,
+    fontFamily: "Poppins-SemiBold",
+    color: "#FFFFFF",
+  },
+  // Delete modal styles
+  deleteModalContent: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+    width: "80%",
+    padding: 32,
+    alignItems: "center",
+  },
+  deleteIconContainer: {
+    marginBottom: 20,
+  },
+  deleteTitle: {
+    fontSize: 24,
+    fontFamily: "Poppins-Bold",
+    color: "#000",
+    marginBottom: 12,
+  },
+  deleteMessage: {
+    fontSize: 14,
+    fontFamily: "Poppins-Regular",
+    color: "#666",
+    textAlign: "center",
+    marginBottom: 24,
+    lineHeight: 22,
+  },
+  deleteButtonsContainer: {
+    flexDirection: "row",
+    gap: 12,
+    width: "100%",
+  },
+  deleteActionButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  cancelButton: {
+    backgroundColor: "#E0E0E0",
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontFamily: "Poppins-SemiBold",
+    color: "#666",
+  },
+  confirmDeleteButton: {
+    backgroundColor: "#FF6B6B",
+  },
+  confirmDeleteButtonText: {
     fontSize: 16,
     fontFamily: "Poppins-SemiBold",
     color: "#FFFFFF",

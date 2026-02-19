@@ -291,6 +291,7 @@ class InspectorService {
         userId: inspectorId, // DynamoDB partition key
         id: inspectorId,
         inspectorId,
+        role: "inspector", // Role for inspector
         userType: "inspector", // Identify as inspector
         status: inspectorData.status || "pending",
         isAssigned: inspectorData.isAssigned || false,

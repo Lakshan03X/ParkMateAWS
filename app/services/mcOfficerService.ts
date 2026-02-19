@@ -73,6 +73,7 @@ class MCOfficerService {
         userId: id, // DynamoDB partition key
         id,
         ...officerData,
+        role: "mc_officer", // Role for MC officer
         userType: "mc_officer", // Identify as MC officer
         status: officerData.status || "on duty",
         createdAt: new Date().toISOString(),
@@ -115,7 +116,12 @@ class MCOfficerService {
    */
   async deleteOfficer(officerId: string): Promise<void> {
     try {
-      await awsDynamoService.deleteItem(COLLECTION_NAME, { userId: officerId });
+      console.log("Deleting MC officer with ID:", officerId);
+      console.log("Sending delete request with key:", { userId: officerId });
+      
+      const result = await awsDynamoService.deleteItem(COLLECTION_NAME, { userId: officerId });
+      
+      console.log("Delete operation result:", result);
     } catch (error) {
       console.error("Error deleting MC officer:", error);
       throw new Error("Failed to delete MC officer");

@@ -123,18 +123,29 @@ class AWSDynamoService {
     key: any,
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      await axios.delete(`${this.apiUrl}/delete-item`, {
-        data: {
-          tableName,
-          key,
-        },
+      console.log("DynamoDB deleteItem called:", {
+        tableName,
+        key,
+        url: `${this.apiUrl}/delete-item`,
       });
+      
+      const response = await axios.post(`${this.apiUrl}/delete-item`, {
+        tableName,
+        key,
+      });
+      
+      console.log("DynamoDB deleteItem response:", response.data);
 
       return { success: true };
     } catch (error: any) {
       console.error("DynamoDB DeleteItem Error:", error);
+      console.error("Error response:", error.response?.data);
+      console.error("Error status:", error.response?.status);
       const errorMessage =
-        error.response?.data?.message || error.message || "Delete item failed";
+        error.response?.data?.message || 
+        error.response?.data?.error ||
+        error.message || 
+        "Delete item failed";
       throw new Error(errorMessage);
     }
   }

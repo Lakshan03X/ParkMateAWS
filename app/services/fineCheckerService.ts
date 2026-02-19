@@ -114,6 +114,7 @@ class FineCheckerService {
         userId: checkerId, // DynamoDB partition key
         id: checkerId,
         checkerId,
+        role: "fine_checker", // Role for fine checker
         userType: "fine_checker", // Identify as fine checker
         status: checkerData.status || "offDuty",
         registeredDate: new Date().toISOString().split("T")[0],
