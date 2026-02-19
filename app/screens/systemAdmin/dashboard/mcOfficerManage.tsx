@@ -363,12 +363,12 @@ const MCOfficerManage = () => {
         name: selectedOfficer.name,
         email: selectedOfficer.email,
       });
-      
+
       await mcOfficerService.deleteOfficer(selectedOfficer.id);
-      
+
       console.log("Delete successful, reloading data...");
       await loadData();
-      
+
       setShowDeleteModal(false);
       setSuccessMessage("Successfully deleted Municipal Council Officer");
       setShowSuccessModal(true);
@@ -382,7 +382,7 @@ const MCOfficerManage = () => {
       });
       Alert.alert(
         "Delete Failed",
-        error.message || "Failed to delete officer. Please try again."
+        error.message || "Failed to delete officer. Please try again.",
       );
     } finally {
       setIsSaving(false);

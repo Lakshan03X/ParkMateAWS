@@ -118,9 +118,11 @@ class MCOfficerService {
     try {
       console.log("Deleting MC officer with ID:", officerId);
       console.log("Sending delete request with key:", { userId: officerId });
-      
-      const result = await awsDynamoService.deleteItem(COLLECTION_NAME, { userId: officerId });
-      
+
+      const result = await awsDynamoService.deleteItem(COLLECTION_NAME, {
+        userId: officerId,
+      });
+
       console.log("Delete operation result:", result);
     } catch (error) {
       console.error("Error deleting MC officer:", error);
